@@ -208,18 +208,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginWithProvider = async (provider: Provider) => {
     setLoading(true);
     try {
+      console.log(`Tentando login com ${provider}`);
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/`,
         }
       });
 
       if (error) {
+        console.error(`Erro ao fazer login com ${provider}:`, error);
         throw error;
       }
     } catch (error: any) {
-      console.error(`Error logging in with ${provider}:`, error.message);
+      console.error(`Erro ao fazer login com ${provider}:`, error.message);
       throw error;
     } finally {
       setLoading(false);

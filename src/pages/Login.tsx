@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { Separator } from "@/components/ui/separator";
+import { Google } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -76,11 +77,15 @@ const Login = () => {
 
   const handleSocialLogin = async (provider: "google") => {
     try {
+      setIsLoading(true);
+      console.log(`Iniciando login com ${provider}`);
       await loginWithProvider(provider);
-      // Não mostramos toast aqui porque o usuário será redirecionado para a página do provedor
+      // O usuário será redirecionado para a página do provedor
     } catch (error: any) {
       console.error(`Erro ao fazer login com ${provider}:`, error);
       toast.error(`Falha ao conectar com ${provider}: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -183,6 +188,7 @@ const Login = () => {
                     variant="outline"
                     className="w-full"
                     onClick={() => handleSocialLogin("google")}
+                    disabled={isLoading}
                   >
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                       <path
