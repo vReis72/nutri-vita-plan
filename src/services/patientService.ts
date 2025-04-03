@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Patient } from "@/types";
 
@@ -7,6 +6,7 @@ import { Patient } from "@/types";
  */
 export interface PatientWithProfile extends Omit<Patient, 'createdAt' | 'updatedAt'> {
   profileName: string;
+  nutritionistId?: string;
   photoUrl?: string;
   nutritionistName?: string;
   createdAt: Date;
@@ -53,6 +53,8 @@ export const getAllPatients = async (): Promise<PatientWithProfile[]> => {
   return data.map(item => ({
     id: item.id,
     name: item.profiles.name,
+    profileName: item.profiles.name,
+    nutritionistId: item.nutritionist_id,
     age: item.age,
     gender: item.gender,
     height: item.height,
@@ -104,6 +106,8 @@ export const getPatientsByNutritionistId = async (nutritionistId: string): Promi
   return data.map(item => ({
     id: item.id,
     name: item.profiles.name,
+    profileName: item.profiles.name,
+    nutritionistId: item.nutritionist_id,
     age: item.age,
     gender: item.gender,
     height: item.height,
@@ -160,6 +164,8 @@ export const getPatientById = async (id: string): Promise<PatientWithProfile> =>
   return {
     id: data.id,
     name: data.profiles.name,
+    profileName: data.profiles.name,
+    nutritionistId: data.nutritionist_id,
     age: data.age,
     gender: data.gender,
     height: data.height,
@@ -218,6 +224,8 @@ export const getPatientByProfileId = async (profileId: string): Promise<PatientW
   return {
     id: data.id,
     name: data.profiles.name,
+    profileName: data.profiles.name,
+    nutritionistId: data.nutritionist_id,
     age: data.age,
     gender: data.gender,
     height: data.height,
