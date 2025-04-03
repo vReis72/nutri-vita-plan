@@ -16,22 +16,30 @@ export const useAuth = () => {
 
   useEffect(() => {
     const getInitialSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error("Erro ao obter a sessão:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
+    // Configurar ouvinte de alterações de autenticação PRIMEIRO
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      console.log(`Evento de autenticação: ${event}`);
+    });
+
+    // DEPOIS verificar a sessão existente
     getInitialSession();
 
-    supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      setUser(session?.user ?? null);
-      setSession(session);
-      console.log(`Auth event: ${event}`);
-    });
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signup = async (email: string, password: string, name: string, role: "nutritionist" | "patient" | "admin") => {
@@ -84,7 +92,7 @@ export const useAuth = () => {
         navigate("/", { replace: true });
       }
     } catch (error: any) {
-      console.error("Error signing up:", error.message);
+      console.error("Erro ao registrar:", error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -107,7 +115,7 @@ export const useAuth = () => {
         setUser(data.user);
       }
     } catch (error: any) {
-      console.error("Error logging in:", error.message);
+      console.error("Erro ao fazer login:", error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -117,7 +125,7 @@ export const useAuth = () => {
   const loginWithProvider = async (provider: Provider) => {
     setLoading(true);
     try {
-      console.log(`Attempting login with ${provider}`);
+      console.log(`Tentando login com ${provider}`);
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -126,11 +134,11 @@ export const useAuth = () => {
       });
 
       if (error) {
-        console.error(`Error logging in with ${provider}:`, error);
+        console.error(`Erro ao fazer login com ${provider}:`, error);
         throw error;
       }
     } catch (error: any) {
-      console.error(`Error logging in with ${provider}:`, error.message);
+      console.error(`Erro ao fazer login com ${provider}:`, error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -147,7 +155,7 @@ export const useAuth = () => {
       setUser(null);
       navigate("/login", { replace: true });
     } catch (error: any) {
-      console.error("Error signing out:", error.message);
+      console.error("Erro ao sair:", error.message);
     } finally {
       setLoading(false);
     }

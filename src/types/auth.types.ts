@@ -1,5 +1,8 @@
 
-import { Session, User, Provider } from "@supabase/supabase-js";
+export interface AuthUser {
+  id: string;
+  email?: string;
+}
 
 export interface Profile {
   id: string;
@@ -21,36 +24,29 @@ export interface PatientWithProfile {
   id: string;
   name: string;
   profileName: string;
-  age: number;
-  gender: "male" | "female";
-  height: number;
-  weight: number;
-  email: string;
-  phone: string;
-  goal: "weightLoss" | "weightGain" | "maintenance";
-  notes: string;
-  photoUrl: string;
-  nutritionistName: string;
+  nutritionistId?: string;
+  nutritionistName?: string;
+  age?: number;
+  gender?: 'male' | 'female';
+  height?: number;
+  weight?: number;
+  email?: string;
+  phone?: string;
+  goal?: 'weightLoss' | 'weightGain' | 'maintenance';
+  notes?: string;
+  photoUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  read: boolean;
-  date: Date;
-}
-
 export interface AuthContextType {
-  session: Session | null;
-  user: User | null;
+  user: AuthUser | null;
   profile: Profile | null;
   nutritionist: NutritionistWithProfile | null;
+  isLoading: boolean;
   signup: (email: string, password: string, name: string, role: "nutritionist" | "patient" | "admin") => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  loginWithProvider: (provider: Provider) => Promise<void>;
+  loginWithProvider: (provider: "google") => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: { name: string; photoUrl: string | null }) => Promise<void>;
   isNutritionist: () => boolean;
@@ -59,9 +55,9 @@ export interface AuthContextType {
   isPatientOfCurrentNutritionist: (patientId: string) => boolean;
   getAllNutritionists: () => Promise<NutritionistWithProfile[]>;
   getAllPatients: () => Promise<PatientWithProfile[]>;
-  isLoading?: boolean;
-  notifications?: Notification[];
-  unreadNotificationsCount?: number;
-  markNotificationAsRead?: (id: string) => void;
-  transferPatient?: (patientId: string, newNutritionistId: string) => Promise<void>;
+  transferPatient: (patientId: string, newNutritionistId: string) => Promise<void>;
+  notifications: any[];
+  hasUnreadNotifications: boolean;
+  markAllNotificationsAsRead: () => void;
+  markNotificationAsRead: (id: string) => void;
 }
