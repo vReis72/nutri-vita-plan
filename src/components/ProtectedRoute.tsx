@@ -18,7 +18,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const params = useParams();
   
   if (isLoading) {
-    // Podemos adicionar um componente de loading aqui
     return <div className="flex h-screen items-center justify-center">Carregando...</div>;
   }
 
@@ -27,6 +26,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!allowedRoles.includes(user.role)) {
+    // Redirecionar para a rota apropriada baseado no papel do usuário
+    if (user.role === "patient") {
+      return <Navigate to="/" replace />;
+    } else if (user.role === "nutritionist") {
+      return <Navigate to="/" replace />;
+    } else if (user.role === "admin") {
+      return <Navigate to="/admin" replace />;
+    }
     return <Navigate to="/" replace />;
   }
   

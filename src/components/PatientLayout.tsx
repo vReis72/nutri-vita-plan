@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, Navigate } from "react-router-dom";
 import { Home, BarChart, LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -28,17 +28,22 @@ const patientMenuItems = [
   {
     title: "Meu Progresso",
     icon: Home,
-    path: "/",
+    path: "/patient/progress",
   },
   {
     title: "Minhas Avaliações",
     icon: BarChart,
-    path: "/my-assessments",
+    path: "/patient/assessments",
   },
 ];
 
 export const PatientLayout = () => {
-  const { logout, user } = useAuth();
+  const { logout, user, isPatient } = useAuth();
+  
+  // Redirecionar se não for paciente
+  if (!isPatient()) {
+    return <Navigate to="/login" />;
+  }
   
   return (
     <SidebarProvider>
@@ -126,9 +131,9 @@ const PatientSidebar = () => {
       <SidebarFooter>
         <div className="px-3 py-2">
           <SidebarMenuButton asChild tooltip="Meu Perfil">
-            <Link to="/my-profile" className={cn(
+            <Link to="/patient/profile" className={cn(
               "w-full transition-colors",
-              location.pathname === "/my-profile" ? "text-nutri-primary" : ""
+              location.pathname === "/patient/profile" ? "text-nutri-primary" : ""
             )}>
               <User className="h-4 w-4" />
               <span>Meu Perfil</span>
