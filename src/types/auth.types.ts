@@ -1,40 +1,43 @@
 
-export interface AuthUser {
+import { Patient } from "@/types";
+
+export type UserRole = "admin" | "nutritionist" | "patient";
+
+export interface User {
   id: string;
-  email?: string;
+  email: string;
+  role: UserRole;
 }
 
 export interface Profile {
   id: string;
+  userId: string;
   name: string;
-  photoUrl: string | null;
-  role: "nutritionist" | "patient" | "admin";
+  photoUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface NutritionistWithProfile {
+export interface NutritionistProfile {
   id: string;
   profileId: string;
-  name: string;
-  specialties: string[];
-  bio: string;
-  photoUrl: string | null;
+  specialization?: string;
+  biography?: string;
+  yearsOfExperience?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface PatientWithProfile {
+export interface PatientProfile {
   id: string;
-  name: string;
-  profileName: string;
+  profileId: string;
   nutritionistId?: string;
-  nutritionistName?: string;
   age?: number;
   gender?: 'male' | 'female';
   height?: number;
   weight?: number;
-  email?: string;
-  phone?: string;
   goal?: 'weightLoss' | 'weightGain' | 'maintenance';
   notes?: string;
-  photoUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,25 +50,52 @@ export interface Notification {
   date: Date;
 }
 
+export interface PatientWithProfile extends Omit<Patient, 'createdAt' | 'updatedAt'> {
+  id: string;
+  profileName: string;
+  nutritionistId?: string;
+  nutritionistName?: string;
+  photoUrl?: string;
+  email?: string;
+  phone?: string;
+  age: number;
+  gender: 'male' | 'female';
+  height: number;
+  weight: number;
+  goal: 'weightLoss' | 'weightGain' | 'maintenance';
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface NutritionistWithProfile {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  photoUrl?: string;
+  specialization?: string;
+  biography?: string;
+  yearsOfExperience?: number;
+}
+
 export interface AuthContextType {
-  user: AuthUser | null;
+  user: User | null;
   profile: Profile | null;
-  nutritionist: NutritionistWithProfile | null;
+  nutritionist: NutritionistProfile | null;
+  patient: PatientProfile | null;
+  isAuthenticated: boolean;
   isLoading: boolean;
-  signup: (email: string, password: string, name: string, role: "nutritionist" | "patient" | "admin") => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  loginWithProvider: (provider: "google") => Promise<void>;
   logout: () => Promise<void>;
-  updateProfile: (updates: { name: string; photoUrl: string | null }) => Promise<void>;
+  register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
+  getPatientProfile: (id: string) => Promise<PatientWithProfile | null>;
+  getAllPatients: () => Promise<PatientWithProfile[]>;
+  getAllNutritionists: () => Promise<NutritionistWithProfile[]>;
+  transferPatient: (patientId: string, nutritionistId: string) => Promise<void>;
+  isAdmin: () => boolean;
   isNutritionist: () => boolean;
   isPatient: () => boolean;
-  isAdmin: () => boolean;
   isPatientOfCurrentNutritionist: (patientId: string) => boolean;
-  getAllNutritionists: () => Promise<NutritionistWithProfile[]>;
-  getAllPatients: () => Promise<PatientWithProfile[]>;
-  transferPatient: (patientId: string, newNutritionistId: string) => Promise<void>;
-  notifications: Notification[];
-  hasUnreadNotifications: boolean;
-  markAllNotificationsAsRead: () => void;
-  markNotificationAsRead: (id: string) => void;
+  unreadNotificationsCount: number;
 }

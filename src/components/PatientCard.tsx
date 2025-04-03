@@ -5,14 +5,20 @@ import { Patient } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, BarChart, Clipboard, CalendarClock } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import TransferPatientDialog from "@/components/TransferPatientDialog";
 
 interface PatientCardProps {
   patient: Patient;
+  showTransfer?: boolean;
+  onTransferClick?: () => void;
 }
 
-const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
+const PatientCard: React.FC<PatientCardProps> = ({ 
+  patient, 
+  showTransfer = false, 
+  onTransferClick 
+}) => {
   const getBMIStatus = (bmi: number) => {
     if (bmi < 18.5) return "Abaixo do peso";
     if (bmi < 25) return "Peso normal";
@@ -92,7 +98,18 @@ const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
-          <TransferPatientDialog patient={patient} />
+          {showTransfer && onTransferClick && (
+            <Button 
+              variant="outline" 
+              onClick={onTransferClick}
+              className="flex-none"
+            >
+              Transferir
+            </Button>
+          )}
+          {!showTransfer && (
+            <TransferPatientDialog patient={patient} />
+          )}
         </div>
       </CardContent>
     </Card>

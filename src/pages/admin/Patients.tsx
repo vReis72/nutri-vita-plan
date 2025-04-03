@@ -113,10 +113,20 @@ const AdminPatients = () => {
         </div>
       </Tabs>
 
-      {selectedPatientId && (
+      {selectedPatientId && nutritionists.length > 0 && (
         <TransferPatientDialog
-          patientId={selectedPatientId}
-          nutritionists={nutritionists}
+          patient={patients?.find(p => p.id === selectedPatientId) || {
+            id: selectedPatientId,
+            name: "Paciente",
+            age: 0,
+            gender: "male",
+            height: 0,
+            weight: 0,
+            goal: "maintenance",
+            profileName: "",
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }}
           open={isTransferDialogOpen}
           onOpenChange={setIsTransferDialogOpen}
           onTransferComplete={handleTransferComplete}
@@ -173,7 +183,7 @@ const PatientsList = ({ patients, isLoading, error, onTransferClick }: PatientsL
       {patients.map((patient) => (
         <PatientCard
           key={patient.id}
-          patient={patient}
+          patient={patient as any}
           showTransfer={true}
           onTransferClick={() => onTransferClick(patient.id)}
         />
