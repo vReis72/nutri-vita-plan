@@ -50,7 +50,6 @@ export const useDataFetching = (profile: Profile | null, nutritionistId: string 
             phone,
             goal,
             notes,
-            photo_url,
             nutritionist_id,
             created_at,
             updated_at,
@@ -74,7 +73,8 @@ export const useDataFetching = (profile: Profile | null, nutritionistId: string 
           phone: item.phone || '',
           goal: item.goal || 'maintenance',
           notes: item.notes || '',
-          photoUrl: item.photo_url || '',
+          photoUrl: '', // Removendo photo_url do SQL pois não existe
+          nutritionistId: item.nutritionist_id,
           nutritionistName: item.nutritionist?.profiles?.name || 'Sem nutricionista',
           createdAt: new Date(item.created_at),
           updatedAt: new Date(item.updated_at),
@@ -93,7 +93,7 @@ export const useDataFetching = (profile: Profile | null, nutritionistId: string 
             phone,
             goal,
             notes,
-            photo_url,
+            nutritionist_id,
             created_at,
             updated_at,
             profile:profile_id(name)
@@ -114,7 +114,8 @@ export const useDataFetching = (profile: Profile | null, nutritionistId: string 
           phone: item.phone || '',
           goal: item.goal || 'maintenance',
           notes: item.notes || '',
-          photoUrl: item.photo_url || '',
+          photoUrl: '', // Removendo photo_url do SQL pois não existe
+          nutritionistId: item.nutritionist_id,
           nutritionistName: profile?.name || 'Sem informação',
           createdAt: new Date(item.created_at),
           updatedAt: new Date(item.updated_at),

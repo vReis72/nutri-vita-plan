@@ -7,8 +7,8 @@ export const useRoleChecks = (profile: Profile | null) => {
   const isAdmin = () => profile?.role === "admin";
 
   const isPatientOfCurrentNutritionist = (patientId: string) => {
-    // Simplified for now, but can be expanded with actual logic
-    // Returning true as a default since the original implementation also returns true
+    // Simplificado por enquanto, mas pode ser expandido com lógica real
+    // Retornando true como padrão
     return true;
   };
 

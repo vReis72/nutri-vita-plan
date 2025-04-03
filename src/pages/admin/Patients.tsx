@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,28 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { ArrowRightLeft, Search, Filter } from "lucide-react";
+import { NutritionistWithProfile, PatientWithProfile } from "@/types/auth.types";
 
 const AdminPatients = () => {
   const { getAllPatients, getAllNutritionists } = useAuth();
-  const patients = getAllPatients();
-  const nutritionists = getAllNutritionists();
+  const [patients, setPatients] = useState<PatientWithProfile[]>([]);
+  const [nutritionists, setNutritionists] = useState<NutritionistWithProfile[]>([]);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const patientsData = await getAllPatients();
+        const nutritionistsData = await getAllNutritionists();
+        
+        setPatients(patientsData);
+        setNutritionists(nutritionistsData);
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+      }
+    };
+    
+    fetchData();
+  }, [getAllPatients, getAllNutritionists]);
   
   return (
     <div className="space-y-6 animate-fade-in">
@@ -64,7 +81,7 @@ const AdminPatients = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src="" alt={patient.name} />
+                      <AvatarImage src={patient.photoUrl || ""} alt={patient.name} />
                       <AvatarFallback className="bg-nutri-primary text-white">
                         {patient.name.charAt(0)}
                       </AvatarFallback>
