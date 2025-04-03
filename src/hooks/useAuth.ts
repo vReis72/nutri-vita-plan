@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Session, User as SupabaseUser, AuthChangeEvent, Provider } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +20,7 @@ export const useAuth = () => {
     if (supabaseUser && profile) {
       setUser({
         id: supabaseUser.id,
-        email: supabaseUser.email,
+        email: supabaseUser.email || null,
         role: profile.role
       });
     } else if (!supabaseUser) {

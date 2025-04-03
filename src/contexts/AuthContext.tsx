@@ -4,7 +4,7 @@ import { useAuth as useAuthHook } from "@/hooks/useAuth";
 import { useRoleChecks } from "@/hooks/useRoleChecks";
 import { useDataFetching } from "@/hooks/useDataFetching";
 import { useNotifications } from "@/hooks/useNotifications";
-import { AuthContextType } from "@/types/auth.types";
+import { AuthContextType, NutritionistProfile } from "@/types/auth.types";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value: AuthContextType = {
     user: auth.user,
     profile: auth.profile,
-    nutritionist: auth.nutritionist,
+    nutritionist: auth.nutritionist as NutritionistProfile | null,
     patient: auth.patient,
     isAuthenticated: auth.isAuthenticated,
     isLoading: auth.isLoading,
