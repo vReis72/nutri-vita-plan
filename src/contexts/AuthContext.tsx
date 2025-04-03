@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -13,22 +14,46 @@ import {
   Provider,
 } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  createNutritionistProfile,
-  getNutritionistByProfileId,
-  updateNutritionistProfile,
-  fetchAllNutritionists,
-  NutritionistWithProfile,
-} from "@/services/nutritionistService";
-import { Profile } from "@/types";
-import { getPatientsByNutritionistId, PatientWithProfile } from "@/services/patientService";
+
+interface Profile {
+  id: string;
+  name: string;
+  photoUrl: string | null;
+  role: "nutritionist" | "patient" | "admin";
+}
+
+interface NutritionistWithProfile {
+  id: string;
+  profileId: string;
+  name: string;
+  specialties: string[];
+  bio: string;
+  photoUrl: string | null;
+}
+
+interface PatientWithProfile {
+  id: string;
+  name: string;
+  profileName: string;
+  age: number;
+  gender: "male" | "female";
+  height: number;
+  weight: number;
+  email: string;
+  phone: string;
+  goal: "weightLoss" | "weightGain" | "maintenance";
+  notes: string;
+  photoUrl: string;
+  nutritionistName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
   nutritionist: NutritionistWithProfile | null;
-  loading: boolean;
   signup: (email: string, password: string, name: string, role: "nutritionist" | "patient" | "admin") => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   loginWithProvider: (provider: Provider) => Promise<void>;
@@ -120,8 +145,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchNutritionistProfile = async () => {
     setLoading(true);
     try {
-      const nutritionistProfile = await getNutritionistByProfileId(user!.id);
-      setNutritionist(nutritionistProfile);
+      let { data, error } = await supabase
+        .from("nutritionists")
+        .select("*")
+        .eq("profile_id", user!.id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        setNutritionist({
+          id: data.id,
+          profileId: data.profile_id,
+          name: profile!.name,
+          specialties: data.specialties || [],
+          bio: data.bio || "",
+          photoUrl: profile!.photoUrl,
+        });
+      }
     } catch (error: any) {
       console.error("Error fetching nutritionist profile:", error.message);
     } finally {
@@ -152,7 +195,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           name: name,
           photo_url: null,
           role: role,
-          updated_at: new Date(),
+          updated_at: new Date().toISOString(),
         };
 
         let { error: profileError } = await supabase.from("profiles").insert(updates);
@@ -162,7 +205,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (role === "nutritionist") {
-          await createNutritionistProfile(data.user.id);
+          const { error: nutritionistError } = await supabase
+            .from("nutritionists")
+            .insert({
+              profile_id: data.user.id,
+              specialties: [],
+              bio: "",
+            });
+
+          if (nutritionistError) {
+            throw nutritionistError;
+          }
         }
 
         setProfile({
@@ -262,10 +315,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       );
 
       if (nutritionist) {
-        await updateNutritionistProfile(user!.id, {
-          name: updates.name,
-          photoUrl: updates.photoUrl,
-        });
+        await supabase
+          .from("nutritionists")
+          .update({ bio: nutritionist.bio, specialties: nutritionist.specialties })
+          .eq("profile_id", user!.id);
+          
         fetchNutritionistProfile();
       }
     } catch (error: any) {
@@ -288,7 +342,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const getAllNutritionists = async () => {
     try {
-      return await fetchAllNutritionists();
+      const { data, error } = await supabase
+        .from('nutritionists')
+        .select(`
+          id,
+          profile_id,
+          specialties,
+          bio,
+          profiles (
+            name,
+            photo_url
+          )
+        `);
+        
+      if (error) throw error;
+      
+      return (data || []).map(item => ({
+        id: item.id,
+        profileId: item.profile_id,
+        name: item.profiles?.name || 'Nome não disponível',
+        specialties: item.specialties || [],
+        bio: item.bio || '',
+        photoUrl: item.profiles?.photo_url || null,
+      }));
     } catch (error) {
       console.error("Erro ao buscar nutricionistas:", error);
       return [];
@@ -298,10 +374,86 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const getAllPatients = async () => {
     try {
       if (isAdmin()) {
-        const { getAllPatients } = await import('@/services/patientService');
-        return await getAllPatients();
+        const { data, error } = await supabase
+          .from('patients')
+          .select(`
+            id,
+            name,
+            age,
+            gender,
+            height,
+            weight,
+            email,
+            phone,
+            goal,
+            notes,
+            photo_url,
+            nutritionist_id,
+            created_at,
+            updated_at,
+            nutritionists:nutritionist_id(
+              profiles(name)
+            )
+          `);
+          
+        if (error) throw error;
+        
+        return (data || []).map(item => ({
+          id: item.id,
+          name: item.name,
+          profileName: item.name,
+          age: item.age,
+          gender: item.gender,
+          height: item.height,
+          weight: item.weight,
+          email: item.email,
+          phone: item.phone,
+          goal: item.goal,
+          notes: item.notes,
+          photoUrl: item.photo_url || '',
+          nutritionistName: item.nutritionists?.profiles?.name || 'Sem nutricionista',
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at),
+        }));
       } else if (isNutritionist() && nutritionist) {
-        return await getPatientsByNutritionistId(nutritionist.id);
+        const { data, error } = await supabase
+          .from('patients')
+          .select(`
+            id,
+            name,
+            age,
+            gender,
+            height,
+            weight,
+            email,
+            phone,
+            goal,
+            notes,
+            photo_url,
+            created_at,
+            updated_at
+          `)
+          .eq('nutritionist_id', nutritionist.id);
+          
+        if (error) throw error;
+        
+        return (data || []).map(item => ({
+          id: item.id,
+          name: item.name,
+          profileName: item.name,
+          age: item.age,
+          gender: item.gender,
+          height: item.height,
+          weight: item.weight,
+          email: item.email,
+          phone: item.phone,
+          goal: item.goal,
+          notes: item.notes,
+          photoUrl: item.photo_url || '',
+          nutritionistName: profile?.name || 'Sem informação',
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at),
+        }));
       }
       return [];
     } catch (error) {
@@ -315,7 +467,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     profile,
     nutritionist,
-    loading,
     signup,
     login,
     loginWithProvider,
