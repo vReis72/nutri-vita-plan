@@ -1,21 +1,10 @@
 
-import React from "react";
-import { Link, useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Home, 
-  Users, 
-  Calculator, 
-  ClipboardList, 
-  Utensils, 
-  Settings, 
-  LogOut
-} from "lucide-react";
 
-interface SidebarProps {
+export interface SidebarProps {
   className?: string;
+  children?: React.ReactNode;
   items?: {
     title: string;
     href: string;
@@ -23,72 +12,51 @@ interface SidebarProps {
   }[];
 }
 
-export function Sidebar({ className, items }: SidebarProps) {
-  const location = useLocation();
-  const { logout, profile } = useAuth();
+export function Sidebar({ className, children }: SidebarProps) {
+  return (
+    <div className={cn("h-full w-[240px] border-r bg-background flex-shrink-0", className)}>
+      {children}
+    </div>
+  );
+}
 
-  const handleLogout = async () => {
-    await logout();
+export function SidebarTrigger({ className }: { className?: string }) {
+  return (
+    <button className={cn("h-5 w-5 text-muted-foreground", className)}>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+        <path fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10zm0 5.25a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+      </svg>
+    </button>
+  );
+}
+
+// Context for sidebar state
+const SidebarContext = React.createContext<{
+  expanded: boolean;
+  toggleSidebar: () => void;
+}>({
+  expanded: true,
+  toggleSidebar: () => {},
+});
+
+export function SidebarProvider({ children }: { children: ReactNode }) {
+  const [expanded, setExpanded] = React.useState(true);
+
+  const toggleSidebar = () => {
+    setExpanded(!expanded);
   };
 
   return (
-    <div className={cn("pb-12", className)}>
-      <div className="space-y-4 py-4">
-        <div className="px-4 py-2">
-          <div className="rounded-md bg-gradient-to-r from-nutri-secondary to-nutri-primary p-4 text-white flex flex-col">
-            <h2 className="mb-2 font-semibold">Bem-vindo(a),</h2>
-            <p className="text-sm opacity-90">{profile?.name || "Usuário"}</p>
-            <div className="mt-1 px-2 py-1 text-xs bg-white/20 rounded-full w-fit">
-              {profile?.role === "nutritionist" && "Nutricionista"}
-              {profile?.role === "patient" && "Paciente"}
-              {profile?.role === "admin" && "Administrador"}
-            </div>
-          </div>
-        </div>
-        <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-            Navegação
-          </h2>
-          <div className="space-y-1">
-            {items?.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground relative",
-                    isActive ? "text-nutri-primary" : "text-gray-600 dark:text-gray-300"
-                  )}
-                >
-                  <AnimatePresence>
-                    {isActive && (
-                      <motion.div
-                        layoutId="sidebar-indicator"
-                        className="absolute left-0 w-1 h-full bg-nutri-primary rounded-full"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      />
-                    )}
-                  </AnimatePresence>
-                  <item.icon className="mr-2 h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
-              );
-            })}
-            
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground text-gray-600 dark:text-gray-300"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sair</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <SidebarContext.Provider value={{ expanded, toggleSidebar }}>
+      {children}
+    </SidebarContext.Provider>
   );
+}
+
+export function useSidebar() {
+  const context = React.useContext(SidebarContext);
+  if (context === undefined) {
+    throw new Error("useSidebar must be used within a SidebarProvider");
+  }
+  return context;
 }

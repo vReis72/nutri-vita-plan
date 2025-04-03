@@ -7,20 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarFooter, 
-  SidebarGroup, 
-  SidebarGroupContent, 
-  SidebarGroupLabel, 
-  SidebarHeader, 
-  SidebarMenu, 
-  SidebarMenuButton, 
-  SidebarMenuItem, 
-  SidebarProvider, 
-  SidebarTrigger 
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarTrigger, SidebarProvider } from "@/components/ui/sidebar";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
 
 // Menu items para admin
@@ -38,7 +25,7 @@ const adminMenuItems = [
 ];
 
 const AdminLayout = () => {
-  const { logout, user } = useAuth();
+  const { logout, profile } = useAuth();
   
   return (
     <SidebarProvider>
@@ -63,7 +50,7 @@ const AdminLayout = () => {
                 <Avatar className="border-2 border-transparent hover:border-nutri-primary transition-all duration-200">
                   <AvatarImage src="" alt="Admin" />
                   <AvatarFallback className="bg-nutri-primary text-white">
-                    {user?.name.charAt(0) || "A"}
+                    {profile?.name.charAt(0) || "A"}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -80,62 +67,65 @@ const AdminLayout = () => {
 
 const AdminSidebar = () => {
   const location = useLocation();
-  const { user } = useAuth();
+  const { profile } = useAuth();
   
   return (
     <Sidebar>
-      <SidebarHeader>
-        <div className="flex flex-col items-center gap-2 p-4">
+      <div className="flex flex-col h-full">
+        <div className="flex flex-col items-center gap-2 p-4 border-b">
           <Avatar className="h-20 w-20">
             <AvatarImage src="" alt="Admin" />
             <AvatarFallback className="bg-nutri-primary text-xl text-white">
-              {user?.name.charAt(0) || "A"}
+              {profile?.name.charAt(0) || "A"}
             </AvatarFallback>
           </Avatar>
           <div className="text-center">
-            <p className="font-semibold">{user?.name || "Admin"}</p>
+            <p className="font-semibold">{profile?.name || "Admin"}</p>
             <p className="text-sm text-gray-500">Painel de Administração</p>
           </div>
         </div>
-      </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+
+        <div className="flex-1 py-4">
+          <div className="px-3 py-2">
+            <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">Menu</h2>
+            <div className="space-y-1">
               {adminMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title} 
-                    data-active={location.pathname === item.path}>
-                    <Link to={item.path} className="group">
-                      <item.icon className={cn(
-                        "h-4 w-4 transition-transform duration-200", 
-                        location.pathname === item.path ? "text-nutri-primary" : ""
-                      )} />
-                      <span className={cn(
-                        location.pathname === item.path ? "font-medium" : ""
-                      )}>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <Link
+                  key={item.title}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                    location.pathname === item.path 
+                      ? "text-nutri-primary bg-accent/50"
+                      : "text-gray-600 dark:text-gray-300"
+                  )}
+                >
+                  <item.icon className={cn(
+                    "mr-2 h-4 w-4", 
+                    location.pathname === item.path ? "text-nutri-primary" : ""
+                  )} />
+                  <span>{item.title}</span>
+                </Link>
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <div className="px-3 py-2">
-          <SidebarMenuButton asChild tooltip="Configurações">
-            <Link to="/admin/settings" className={cn(
-              "w-full transition-colors",
-              location.pathname === "/admin/settings" ? "text-nutri-primary" : ""
-            )}>
-              <Settings className="h-4 w-4" />
-              <span>Configurações</span>
-            </Link>
-          </SidebarMenuButton>
+            </div>
+          </div>
         </div>
-      </SidebarFooter>
+
+        <div className="border-t p-3">
+          <Link
+            to="/admin/settings"
+            className={cn(
+              "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+              location.pathname === "/admin/settings" 
+                ? "text-nutri-primary bg-accent/50"
+                : "text-gray-600 dark:text-gray-300"
+            )}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            <span>Configurações</span>
+          </Link>
+        </div>
+      </div>
     </Sidebar>
   );
 };

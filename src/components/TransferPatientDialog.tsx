@@ -1,7 +1,5 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Patient } from "@/types";
 import { 
   Dialog, 
   DialogContent, 
@@ -21,20 +19,40 @@ import {
 } from "@/components/ui/select";
 import { ArrowRightLeft, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { NutritionistWithProfile } from "@/types/auth.types";
+
+interface Patient {
+  id: string;
+  name: string;
+  email: string;
+  // ... other properties
+}
 
 interface TransferPatientDialogProps {
   patient: Patient;
 }
 
 const TransferPatientDialog: React.FC<TransferPatientDialogProps> = ({ patient }) => {
-  const { getAllNutritionists, user, transferPatient } = useAuth();
+  const { user, transferPatient, getAllNutritionists } = useAuth();
   const [selectedNutritionistId, setSelectedNutritionistId] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [open, setOpen] = useState(false);
+  const [nutritionists, setNutritionists] = useState<NutritionistWithProfile[]>([]);
   
-  // Obter todos os nutricionistas, exceto o atual
-  const availableNutritionists = getAllNutritionists().filter(
-    nutritionist => nutritionist.id !== user?.id
+  useEffect(() => {
+    const fetchNutritionists = async () => {
+      if (getAllNutritionists) {
+        const fetchedNutritionists = await getAllNutritionists();
+        setNutritionists(fetchedNutritionists);
+      }
+    };
+    
+    fetchNutritionists();
+  }, [getAllNutritionists]);
+  
+  // Filter nutritionists to exclude the current one
+  const availableNutritionists = nutritionists.filter(
+    nutritionist => nutritionist.profileId !== user?.id
   );
   
   const handleTransfer = async () => {
@@ -45,9 +63,11 @@ const TransferPatientDialog: React.FC<TransferPatientDialogProps> = ({ patient }
     
     setIsTransferring(true);
     try {
-      await transferPatient(patient.id, selectedNutritionistId);
-      setOpen(false);
-      toast.success(`${patient.name} foi transferido(a) com sucesso.`);
+      if (transferPatient) {
+        await transferPatient(patient.id, selectedNutritionistId);
+        setOpen(false);
+        toast.success(`${patient.name} foi transferido(a) com sucesso.`);
+      }
     } catch (error) {
       toast.error("Erro ao transferir paciente.");
       console.error(error);

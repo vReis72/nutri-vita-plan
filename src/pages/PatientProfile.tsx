@@ -1,15 +1,37 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { mockPatients } from "@/data/mockData";
+import { PatientWithProfile } from "@/types/auth.types";
 
 const PatientProfile = () => {
-  const { user } = useAuth();
+  const { profile, getAllPatients } = useAuth();
+  const [patientData, setPatientData] = useState<any>(null);
   
-  // Buscar dados do paciente pelo ID armazenado no contexto
-  const patientData = mockPatients.find(p => p.id === user?.patientId) || mockPatients[0];
+  useEffect(() => {
+    const fetchPatientData = async () => {
+      if (profile && profile.role === "patient" && getAllPatients) {
+        const patients = await getAllPatients();
+        const currentPatient = patients.find(p => p.id === profile.id);
+        if (currentPatient) {
+          setPatientData(currentPatient);
+        } else {
+          // Fall back to mock data if needed
+          setPatientData(mockPatients[0]);
+        }
+      } else {
+        setPatientData(mockPatients[0]);
+      }
+    };
+    
+    fetchPatientData();
+  }, [profile, getAllPatients]);
+  
+  if (!patientData) {
+    return <div className="flex justify-center p-8">Carregando...</div>;
+  }
   
   return (
     <div className="space-y-6 animate-fade-in">

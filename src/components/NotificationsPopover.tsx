@@ -14,10 +14,12 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 export const NotificationsPopover = () => {
-  const { notifications, unreadNotificationsCount, markNotificationAsRead } = useAuth();
+  const { notifications = [], unreadNotificationsCount = 0, markNotificationAsRead } = useAuth();
   
   const handleMarkAsRead = (id: string) => {
-    markNotificationAsRead(id);
+    if (markNotificationAsRead) {
+      markNotificationAsRead(id);
+    }
   };
   
   return (

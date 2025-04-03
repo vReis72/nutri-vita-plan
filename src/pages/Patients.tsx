@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,33 +11,33 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import PatientCard from "@/components/PatientCard";
-import { mockPatients } from "@/data/mockData";
 import { UserPlus, Search, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PatientWithProfile } from "@/types/auth.types";
 
 const Patients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterGoal, setFilterGoal] = useState("all");
-  const { user, isPatientOfCurrentNutritionist } = useAuth();
+  const [patients, setPatients] = useState<PatientWithProfile[]>([]);
+  const { user, profile, nutritionist, getAllPatients, isPatientOfCurrentNutritionist } = useAuth();
 
-  // Filtramos os pacientes para mostrar apenas os vinculados ao nutricionista atual
-  const nutritionisPatientsOnly = useMemo(() => {
-    return mockPatients.filter(patient => {
-      // Se o usuário logado for um nutricionista e tiver pacientes associados
-      if (user?.role === "nutritionist" && user.associatedPatients) {
-        return isPatientOfCurrentNutritionist(patient.id);
+  useEffect(() => {
+    const fetchPatients = async () => {
+      if (getAllPatients) {
+        const fetchedPatients = await getAllPatients();
+        setPatients(fetchedPatients);
       }
-      return false;
-    });
-  }, [user, isPatientOfCurrentNutritionist]);
+    };
+    
+    fetchPatients();
+  }, [getAllPatients]);
 
-  const filteredPatients = useMemo(() => {
-    return nutritionisPatientsOnly.filter((patient) => {
-      const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesGoal = filterGoal === "all" || patient.goal === filterGoal;
-      return matchesSearch && matchesGoal;
-    });
-  }, [nutritionisPatientsOnly, searchTerm, filterGoal]);
+  // Filter patients based on search term and goal
+  const filteredPatients = patients.filter((patient) => {
+    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGoal = filterGoal === "all" || patient.goal === filterGoal;
+    return matchesSearch && matchesGoal;
+  });
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -93,7 +93,7 @@ const Patients = () => {
         <div className="text-center py-12">
           <h3 className="text-lg font-medium text-gray-900">Nenhum paciente encontrado</h3>
           <p className="text-gray-500 mt-1">
-            {nutritionisPatientsOnly.length === 0 
+            {patients.length === 0 
               ? "Você ainda não possui pacientes cadastrados."
               : "Tente modificar os filtros ou adicione um novo paciente."}
           </p>
