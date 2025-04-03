@@ -53,6 +53,7 @@ export interface Notification {
 
 export interface PatientWithProfile {
   id: string;
+  name: string;
   profileName: string;
   nutritionistId?: string;
   nutritionistName?: string;

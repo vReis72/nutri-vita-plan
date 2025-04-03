@@ -3,13 +3,14 @@ import { useState, useEffect } from "react";
 import { Session, User, AuthChangeEvent, Provider } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Profile } from "@/types/auth.types";
+import { Profile, PatientProfile } from "@/types/auth.types";
 import { useProfileData } from "./useProfileData";
 
 export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [patient, setPatient] = useState<PatientProfile | null>(null);
   const navigate = useNavigate();
   
   const { profile, nutritionist, loading: profileLoading, updateProfile } = useProfileData(user);
@@ -41,6 +42,46 @@ export const useAuth = () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Fetch patient data if the user has a patient role
+  useEffect(() => {
+    if (profile && profile.role === 'patient') {
+      fetchPatientData(profile.id);
+    }
+  }, [profile]);
+
+  const fetchPatientData = async (profileId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('profile_id', profileId)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching patient data:", error);
+        return;
+      }
+      
+      if (data) {
+        setPatient({
+          id: data.id,
+          profileId: data.profile_id,
+          nutritionistId: data.nutritionist_id,
+          age: data.age,
+          gender: data.gender,
+          height: data.height,
+          weight: data.weight,
+          goal: data.goal,
+          notes: data.notes,
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at)
+        });
+      }
+    } catch (error) {
+      console.error("Error in fetchPatientData:", error);
+    }
+  };
 
   const signup = async (email: string, password: string, name: string, role: "nutritionist" | "patient" | "admin") => {
     setLoading(true);
@@ -158,6 +199,8 @@ export const useAuth = () => {
         throw error;
       }
       setUser(null);
+      setSession(null);
+      setPatient(null);
       navigate("/login", { replace: true });
     } catch (error: any) {
       console.error("Erro ao sair:", error.message);
@@ -173,6 +216,7 @@ export const useAuth = () => {
     user,
     profile,
     nutritionist,
+    patient,
     signup,
     register,
     login,

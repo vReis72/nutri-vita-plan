@@ -19,7 +19,7 @@ const Patients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterGoal, setFilterGoal] = useState("all");
   const [patients, setPatients] = useState<PatientWithProfile[]>([]);
-  const { user, profile, nutritionist, getAllPatients, isPatientOfCurrentNutritionist } = useAuth();
+  const { user, profile, nutritionist, getAllPatients } = useAuth();
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -34,7 +34,8 @@ const Patients = () => {
 
   // Filter patients based on search term and goal
   const filteredPatients = patients.filter((patient) => {
-    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = patient.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          patient.profileName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesGoal = filterGoal === "all" || patient.goal === filterGoal;
     return matchesSearch && matchesGoal;
   });
@@ -86,7 +87,7 @@ const Patients = () => {
       {filteredPatients.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredPatients.map((patient) => (
-            <PatientCard key={patient.id} patient={patient as any} />
+            <PatientCard key={patient.id} patient={patient} />
           ))}
         </div>
       ) : (

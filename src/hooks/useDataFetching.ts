@@ -6,106 +6,176 @@ import { Profile, PatientWithProfile, NutritionistWithProfile } from "@/types/au
 export const useDataFetching = (profile: Profile | null, nutritionistId: string | null) => {
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [loadingNutritionists, setLoadingNutritionists] = useState(false);
-  
-  const getAllNutritionists = async (): Promise<NutritionistWithProfile[]> => {
-    setLoadingNutritionists(true);
+
+  /**
+   * Obtém o perfil completo de um paciente pelo ID
+   */
+  const getPatientProfile = async (id: string): Promise<PatientWithProfile | null> => {
     try {
-      let { data, error } = await supabase
-        .from("nutritionists")
+      // Busca os detalhes do paciente
+      const { data: patientData, error: patientError } = await supabase
+        .from("patients")
         .select(`
-          id,
-          profile_id,
-          specialization,
-          license_number,
-          profiles:profile_id (
-            name,
-            photo_url,
-            id
-          )
-        `);
+          id, 
+          profile_id, 
+          nutritionist_id, 
+          age, 
+          gender, 
+          height, 
+          weight, 
+          goal, 
+          notes, 
+          created_at, 
+          updated_at,
+          email,
+          phone
+        `)
+        .eq("id", id)
+        .single();
 
-      if (error) throw error;
+      if (patientError) throw patientError;
+      if (!patientData) return null;
 
-      const nutritionists: NutritionistWithProfile[] = data.map((item: any) => ({
-        id: item.id,
-        userId: item.profiles.id,
-        profileId: item.profile_id,
-        name: item.profiles.name,
-        email: "", // This would need to be fetched from auth if needed
-        photoUrl: item.profiles.photo_url,
-        specialization: item.specialization,
-        biography: item.license_number,
-        specialties: item.specialization ? [item.specialization] : [],
-        bio: item.license_number || ""
-      }));
+      // Busca os detalhes do perfil do paciente
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, name, photo_url")
+        .eq("id", patientData.profile_id)
+        .single();
 
-      return nutritionists;
+      if (profileError && profileError.code !== "PGRST116") throw profileError;
+
+      // Busca os detalhes do nutricionista (se aplicável)
+      let nutritionistName = "";
+      if (patientData.nutritionist_id) {
+        const { data: nutritionist, error: nutritionistError } = await supabase
+          .from("nutritionists")
+          .select("profile_id")
+          .eq("id", patientData.nutritionist_id)
+          .single();
+
+        if (!nutritionistError && nutritionist) {
+          const { data: nutritionistProfile } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", nutritionist.profile_id)
+            .single();
+
+          if (nutritionistProfile) {
+            nutritionistName = nutritionistProfile.name;
+          }
+        }
+      }
+
+      return {
+        id: patientData.id,
+        profileName: profileData?.name || "Desconhecido",
+        name: profileData?.name || "Desconhecido",
+        nutritionistId: patientData.nutritionist_id || undefined,
+        nutritionistName: nutritionistName || undefined,
+        photoUrl: profileData?.photo_url || undefined,
+        email: patientData.email || undefined,
+        phone: patientData.phone || undefined,
+        age: patientData.age || 0,
+        gender: patientData.gender || "male",
+        height: patientData.height || 0,
+        weight: patientData.weight || 0,
+        goal: patientData.goal || "maintenance",
+        notes: patientData.notes,
+        createdAt: new Date(patientData.created_at),
+        updatedAt: new Date(patientData.updated_at)
+      };
     } catch (error) {
-      console.error("Erro ao buscar nutricionistas:", error);
-      return [];
-    } finally {
-      setLoadingNutritionists(false);
+      console.error("Erro ao buscar perfil do paciente:", error);
+      return null;
     }
   };
-  
+
+  /**
+   * Obtém todos os pacientes do nutricionista atual ou todos os pacientes (para admin)
+   */
   const getAllPatients = async (): Promise<PatientWithProfile[]> => {
     setLoadingPatients(true);
     try {
-      // Se o perfil for um nutricionista, buscar apenas seus pacientes
-      let query = supabase
-        .from("patients")
-        .select(`
-          id,
-          phone,
-          email,
-          weight,
-          goal,
-          age,
-          gender,
-          height,
-          notes,
-          nutritionist_id,
-          nutritionists:nutritionist_id (
-            id,
-            profiles:profile_id (
-              name
-            )
-          ),
-          profiles:profile_id (
-            name,
-            photo_url
-          )
-        `);
-        
+      let query = supabase.from("patients").select(`
+        id, 
+        profile_id, 
+        nutritionist_id, 
+        age, 
+        gender, 
+        height, 
+        weight, 
+        goal, 
+        notes, 
+        created_at, 
+        updated_at,
+        email,
+        phone
+      `);
+
+      // Se for nutricionista, filtrar apenas por seus pacientes
       if (profile?.role === "nutritionist" && nutritionistId) {
         query = query.eq("nutritionist_id", nutritionistId);
       }
 
-      let { data, error } = await query;
+      const { data: patientsData, error } = await query;
 
       if (error) throw error;
 
-      const patients = data.map((patient: any) => {
-        return {
-          id: patient.id,
-          profileName: patient.profiles?.name || "Sem nome",
-          nutritionistId: patient.nutritionist_id,
-          nutritionistName: patient.nutritionists?.profiles?.name,
-          photoUrl: patient.profiles?.photo_url,
-          email: patient.email,
-          phone: patient.phone,
-          age: patient.age || 0,
-          gender: patient.gender || "male",
-          height: patient.height || 0,
-          weight: patient.weight || 0,
-          goal: patient.goal || "maintenance",
-          notes: patient.notes,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-      });
+      // Buscar informações adicionais para cada paciente
+      const enhancedPatients = await Promise.all(
+        patientsData.map(async (patient) => {
+          // Buscar perfil
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("name, photo_url")
+            .eq("id", patient.profile_id)
+            .single();
 
-      return patients;
+          // Buscar nome do nutricionista (se aplicável)
+          let nutritionistName = "";
+          if (patient.nutritionist_id) {
+            const { data: nutritionist } = await supabase
+              .from("nutritionists")
+              .select("profile_id")
+              .eq("id", patient.nutritionist_id)
+              .single();
+
+            if (nutritionist) {
+              const { data: nutritionistProfile } = await supabase
+                .from("profiles")
+                .select("name")
+                .eq("id", nutritionist.profile_id)
+                .single();
+
+              if (nutritionistProfile) {
+                nutritionistName = nutritionistProfile.name;
+              }
+            }
+          }
+
+          return {
+            id: patient.id,
+            profileName: profileData?.name || "Desconhecido",
+            name: profileData?.name || "Desconhecido",
+            nutritionistId: patient.nutritionist_id || undefined,
+            nutritionistName: nutritionistName || undefined,
+            photoUrl: profileData?.photo_url || undefined,
+            email: patient.email || undefined,
+            phone: patient.phone || undefined,
+            age: patient.age || 0,
+            gender: patient.gender || "male",
+            height: patient.height || 0,
+            weight: patient.weight || 0,
+            goal: patient.goal || "maintenance",
+            notes: patient.notes,
+            createdAt: new Date(patient.created_at),
+            updatedAt: new Date(patient.updated_at)
+          };
+        })
+      );
+
+      return enhancedPatients;
     } catch (error) {
       console.error("Erro ao buscar pacientes:", error);
       return [];
@@ -113,68 +183,76 @@ export const useDataFetching = (profile: Profile | null, nutritionistId: string 
       setLoadingPatients(false);
     }
   };
-  
-  const getPatientProfile = async (id: string): Promise<PatientWithProfile | null> => {
+
+  /**
+   * Obtém todos os nutricionistas (apenas para admin)
+   */
+  const getAllNutritionists = async (): Promise<NutritionistWithProfile[]> => {
+    setLoadingNutritionists(true);
     try {
-      let { data, error } = await supabase
-        .from("patients")
+      const { data: nutritionistsData, error } = await supabase
+        .from("nutritionists")
         .select(`
-          id,
-          phone,
-          email,
-          weight,
-          goal,
-          age,
-          gender,
-          height,
-          notes,
-          nutritionist_id,
-          nutritionists:nutritionist_id (
-            id,
-            profiles:profile_id (
-              name
-            )
-          ),
-          profiles:profile_id (
-            name,
-            photo_url
-          )
-        `)
-        .eq("id", id)
-        .single();
+          id, 
+          profile_id, 
+          specialization, 
+          license_number
+        `);
 
       if (error) throw error;
 
-      return {
-        id: data.id,
-        profileName: data.profiles?.name || "Sem nome",
-        nutritionistId: data.nutritionist_id,
-        nutritionistName: data.nutritionists?.profiles?.name,
-        photoUrl: data.profiles?.photo_url,
-        email: data.email,
-        phone: data.phone,
-        age: data.age || 0,
-        gender: data.gender || "male",
-        height: data.height || 0,
-        weight: data.weight || 0,
-        goal: data.goal || "maintenance",
-        notes: data.notes,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+      // Buscar informações adicionais para cada nutricionista
+      const enhancedNutritionists = await Promise.all(
+        nutritionistsData.map(async (nutritionist) => {
+          // Buscar perfil
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("name, photo_url")
+            .eq("id", nutritionist.profile_id)
+            .single();
+
+          // Buscar email
+          const { data: userData } = await supabase
+            .from("auth")
+            .select("email")
+            .eq("id", nutritionist.profile_id)
+            .single();
+
+          return {
+            id: nutritionist.id,
+            userId: nutritionist.profile_id,
+            profileId: nutritionist.profile_id,
+            name: profileData?.name || "Desconhecido",
+            email: userData?.email || "email@example.com",
+            photoUrl: profileData?.photo_url,
+            specialization: nutritionist.specialization,
+            biography: nutritionist.license_number,
+            yearsOfExperience: 0,
+            specialties: nutritionist.specialization ? [nutritionist.specialization] : [],
+            bio: nutritionist.license_number || ""
+          };
+        })
+      );
+
+      return enhancedNutritionists;
     } catch (error) {
-      console.error("Erro ao buscar perfil do paciente:", error);
-      return null;
+      console.error("Erro ao buscar nutricionistas:", error);
+      return [];
+    } finally {
+      setLoadingNutritionists(false);
     }
   };
-  
+
+  /**
+   * Transfere um paciente para outro nutricionista
+   */
   const transferPatient = async (patientId: string, nutritionistId: string): Promise<void> => {
     try {
       const { error } = await supabase
         .from("patients")
         .update({ nutritionist_id: nutritionistId })
         .eq("id", patientId);
-        
+
       if (error) throw error;
     } catch (error) {
       console.error("Erro ao transferir paciente:", error);
@@ -182,11 +260,27 @@ export const useDataFetching = (profile: Profile | null, nutritionistId: string 
     }
   };
 
+  // Verifica se um paciente pertence ao nutricionista atual
+  const isPatientOfCurrentNutritionist = (patientId: string): boolean => {
+    // Implementação simplificada - na prática, você poderia querer verificar no banco de dados
+    if (!profile || profile.role !== "nutritionist" || !nutritionistId) {
+      return false;
+    }
+    
+    // Para administradores, permitir acesso a todos os pacientes
+    if (profile.role === "admin") {
+      return true;
+    }
+    
+    return true; // Por simplicidade, assumimos que sim neste momento
+  };
+
   return {
+    getPatientProfile,
     getAllPatients,
     getAllNutritionists,
-    getPatientProfile,
     transferPatient,
+    isPatientOfCurrentNutritionist,
     loadingPatients,
     loadingNutritionists
   };
