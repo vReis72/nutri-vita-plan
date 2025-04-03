@@ -10,6 +10,7 @@ import {
   Session,
   User,
   AuthChangeEvent,
+  Provider,
 } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -28,9 +29,10 @@ interface AuthContextType {
   profile: Profile | null;
   nutritionist: NutritionistWithProfile | null;
   loading: boolean;
-  signUp: (email: string, password: string, role: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, role: "nutritionist" | "patient" | "admin") => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
+  loginWithProvider: (provider: Provider) => Promise<void>;
+  logout: () => Promise<void>;
   updateProfile: (updates: { name: string; photoUrl: string | null }) => Promise<void>;
   isNutritionist: () => boolean;
   isPatient: () => boolean;
@@ -127,7 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signUp = async (email: string, password: string, role: string) => {
+  const signup = async (email: string, password: string, name: string, role: "nutritionist" | "patient" | "admin") => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -147,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data.user) {
         const updates = {
           id: data.user.id,
-          name: email.split("@")[0],
+          name: name,
           photo_url: null,
           role: role,
           updated_at: new Date(),
@@ -203,7 +205,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signOut = async () => {
+  const loginWithProvider = async (provider: Provider) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin,
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      console.error(`Error logging in with ${provider}:`, error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
     setLoading(true);
     try {
       let { error } = await supabase.auth.signOut();
@@ -255,11 +278,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isPatient = () => profile?.role === "patient";
   const isAdmin = () => profile?.role === "admin";
 
-  // Funções para buscar dados
   const isPatientOfCurrentNutritionist = (patientId: string) => {
     if (!nutritionist) return false;
     
-    // Implementaremos isso adequadamente quando atualizarmos a página de pacientes
     return true;
   };
 
@@ -275,11 +296,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const getAllPatients = async () => {
     try {
       if (isAdmin()) {
-        // Admin pode ver todos os pacientes
         const { getAllPatients } = await import('@/services/patientService');
         return await getAllPatients();
       } else if (isNutritionist() && nutritionist) {
-        // Nutricionista vê apenas seus pacientes
         return await getPatientsByNutritionistId(nutritionist.id);
       }
       return [];
@@ -295,9 +314,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     profile,
     nutritionist,
     loading,
-    signUp,
+    signup,
     login,
-    signOut,
+    loginWithProvider,
+    logout,
     updateProfile,
     isNutritionist,
     isPatient,
