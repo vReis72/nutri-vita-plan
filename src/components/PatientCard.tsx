@@ -2,69 +2,99 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Patient } from "@/types";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, User } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { ChevronRight, BarChart, Clipboard, CalendarClock } from "lucide-react";
+import TransferPatientDialog from "@/components/TransferPatientDialog";
 
 interface PatientCardProps {
   patient: Patient;
 }
 
-const goalColors = {
-  weightLoss: "bg-blue-100 text-blue-800",
-  weightGain: "bg-green-100 text-green-800",
-  maintenance: "bg-amber-100 text-amber-800",
-};
+const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
+  const getBMIStatus = (bmi: number) => {
+    if (bmi < 18.5) return "Abaixo do peso";
+    if (bmi < 25) return "Peso normal";
+    if (bmi < 30) return "Sobrepeso";
+    if (bmi < 35) return "Obesidade Grau I";
+    if (bmi < 40) return "Obesidade Grau II";
+    return "Obesidade Grau III";
+  };
 
-const goalLabels = {
-  weightLoss: "Emagrecimento",
-  weightGain: "Ganho de massa",
-  maintenance: "Manutenção",
-};
+  const getGoalLabel = (goal: string) => {
+    switch (goal) {
+      case "weightLoss":
+        return "Emagrecimento";
+      case "weightGain":
+        return "Ganho de massa";
+      case "maintenance":
+        return "Manutenção";
+      default:
+        return "Não definido";
+    }
+  };
 
-export const PatientCard: React.FC<PatientCardProps> = ({ patient }) => {
+  const calculateBMI = (weight: number, height: number) => {
+    // Altura deve estar em metros, então convertemos de cm para m
+    const heightInM = height / 100;
+    return (weight / (heightInM * heightInM)).toFixed(1);
+  };
+
+  const bmi = parseFloat(calculateBMI(patient.weight, patient.height));
+
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <CardContent className="p-0">
-        <div className="bg-nutri-primary h-2"></div>
-        <div className="p-5">
-          <div className="flex items-center space-x-3">
-            <div className="rounded-full w-12 h-12 bg-nutri-light flex items-center justify-center text-nutri-secondary">
-              <User size={24} />
-            </div>
+      <CardHeader className="p-4 pb-2">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-12 w-12">
+              <AvatarImage src="" alt={patient.name} />
+              <AvatarFallback className="bg-nutri-primary text-white">
+                {patient.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
             <div>
-              <h3 className="font-semibold text-lg">{patient.name}</h3>
-              <p className="text-sm text-gray-500">
-                {patient.age} anos • {patient.gender === "male" ? "Masculino" : "Feminino"}
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Altura:</span>
-              <span className="font-medium">{patient.height} cm</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Peso:</span>
-              <span className="font-medium">{patient.weight} kg</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Objetivo:</span>
-              <Badge className={goalColors[patient.goal]} variant="outline">
-                {goalLabels[patient.goal]}
-              </Badge>
+              <CardTitle className="text-lg">{patient.name}</CardTitle>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-nutri-primary/10 text-nutri-primary">
+                  {getGoalLabel(patient.goal)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
+      </CardHeader>
+      <CardContent className="p-4 pt-2">
+        <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+          <div>
+            <p className="text-gray-500">Idade</p>
+            <p className="font-medium">{patient.age} anos</p>
+          </div>
+          <div>
+            <p className="text-gray-500">IMC</p>
+            <p className="font-medium">{bmi} ({getBMIStatus(bmi)})</p>
+          </div>
+          <div>
+            <p className="text-gray-500">Peso</p>
+            <p className="font-medium">{patient.weight} kg</p>
+          </div>
+          <div>
+            <p className="text-gray-500">Altura</p>
+            <p className="font-medium">{patient.height} cm</p>
+          </div>
+        </div>
+
+        <div className="flex mt-4 gap-2">
+          <Button asChild variant="default" className="flex-1">
+            <Link to={`/patient/${patient.id}`}>
+              <span>Ver paciente</span>
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Link>
+          </Button>
+          <TransferPatientDialog patient={patient} />
+        </div>
       </CardContent>
-      <CardFooter className="bg-gray-50 p-3 flex justify-end">
-        <Link
-          to={`/patients/${patient.id}`}
-          className="text-sm font-medium text-nutri-secondary flex items-center hover:text-nutri-primary transition-colors"
-        >
-          Ver detalhes <ArrowRight size={16} className="ml-1" />
-        </Link>
-      </CardFooter>
     </Card>
   );
 };

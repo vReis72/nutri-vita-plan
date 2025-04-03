@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 
 import Layout from "./components/Layout";
 import PatientLayout from "./components/PatientLayout";
+import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Patients from "./pages/Patients";
@@ -19,6 +20,11 @@ import Login from "./pages/Login";
 import PatientProgress from "./pages/PatientProgress";
 import PatientAssessments from "./pages/PatientAssessments";
 import PatientProfile from "./pages/PatientProfile";
+
+// Admin pages
+import Nutritionists from "./pages/admin/Nutritionists";
+import AdminPatients from "./pages/admin/Patients";
+import Settings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +68,20 @@ const App = () => (
                 <Route path="/" element={<PatientProgress />} />
                 <Route path="/my-assessments" element={<PatientAssessments />} />
                 <Route path="/my-profile" element={<PatientProfile />} />
+              </Route>
+              
+              {/* Rotas para admin */}
+              <Route 
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/admin" element={<Navigate replace to="/admin/nutritionists" />} />
+                <Route path="/admin/nutritionists" element={<Nutritionists />} />
+                <Route path="/admin/patients" element={<AdminPatients />} />
+                <Route path="/admin/settings" element={<Settings />} />
               </Route>
               
               {/* Rotas de redirecionamento e Not Found */}
