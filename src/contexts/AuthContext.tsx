@@ -142,11 +142,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Simular verificação de localStorage ao iniciar
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const checkAuth = () => {
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error("Erro ao analisar usuário do localStorage:", error);
+          localStorage.removeItem("currentUser"); // Remove dados inválidos
+        }
+      }
+      setIsLoading(false);
+    };
+    
+    checkAuth();
   }, []);
 
   // Carregar notificações do usuário quando ele for autenticado
@@ -252,6 +262,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       throw new Error("Credenciais inválidas");
     } catch (error) {
+      console.error("Erro no login:", error);
+      localStorage.removeItem("currentUser"); // Limpa dados em caso de erro
+      setUser(null);
       throw error;
     } finally {
       setIsLoading(false);

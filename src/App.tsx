@@ -28,77 +28,74 @@ import Settings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light">
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Rota pública de login */}
-              <Route path="/login" element={<Login />} />
-              
-              {/* Rotas para nutricionistas */}
-              <Route 
-                element={
-                  <ProtectedRoute allowedRoles={["nutritionist"]}>
-                    <Layout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/" element={<Index />} />
-                <Route path="/patients" element={<Patients />} />
-                <Route path="/calculator" element={<Calculator />} />
-                <Route path="/diet-plans" element={<PlaceholderPage title="Planos Alimentares" />} />
-                <Route path="/assessments" element={<PlaceholderPage title="Avaliações" />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<PlaceholderPage title="Configurações" />} />
-              </Route>
-              
-              {/* Rotas para pacientes */}
-              <Route 
-                element={
-                  <ProtectedRoute allowedRoles={["patient"]}>
-                    <PatientLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/patient" element={<Navigate to="/patient/progress" replace />} />
-                <Route path="/patient/progress" element={<PatientProgress />} />
-                <Route path="/patient/assessments" element={<PatientAssessments />} />
-                <Route path="/patient/profile" element={<PatientProfile />} />
-              </Route>
-              
-              {/* Rotas para admin */}
-              <Route 
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AdminLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/admin" element={<Navigate replace to="/admin/nutritionists" />} />
-                <Route path="/admin/nutritionists" element={<Nutritionists />} />
-                <Route path="/admin/patients" element={<AdminPatients />} />
-                <Route path="/admin/settings" element={<Settings />} />
-              </Route>
-              
-              {/* Rota de redirecionamento para página de login quando não logado */}
-              <Route path="/" element={
-                <Navigate replace to="/login" />
-              } />
-              
-              {/* Rotas de redirecionamento e Not Found */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
-);
+const App = () => {
+  return (
+    <ThemeProvider attribute="class" defaultTheme="light">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Rota pública de login */}
+                <Route path="/login" element={<Login />} />
+                
+                {/* Rotas para nutricionistas */}
+                <Route 
+                  element={
+                    <ProtectedRoute allowedRoles={["nutritionist"]}>
+                      <Layout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/" element={<Index />} />
+                  <Route path="/patients" element={<Patients />} />
+                  <Route path="/calculator" element={<Calculator />} />
+                  <Route path="/diet-plans" element={<PlaceholderPage title="Planos Alimentares" />} />
+                  <Route path="/assessments" element={<PlaceholderPage title="Avaliações" />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/settings" element={<PlaceholderPage title="Configurações" />} />
+                </Route>
+                
+                {/* Rotas para pacientes */}
+                <Route 
+                  element={
+                    <ProtectedRoute allowedRoles={["patient"]}>
+                      <PatientLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/patient" element={<Navigate to="/patient/progress" replace />} />
+                  <Route path="/patient/progress" element={<PatientProgress />} />
+                  <Route path="/patient/assessments" element={<PatientAssessments />} />
+                  <Route path="/patient/profile" element={<PatientProfile />} />
+                </Route>
+                
+                {/* Rotas para admin */}
+                <Route 
+                  element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AdminLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/admin" element={<Navigate replace to="/admin/nutritionists" />} />
+                  <Route path="/admin/nutritionists" element={<Nutritionists />} />
+                  <Route path="/admin/patients" element={<AdminPatients />} />
+                  <Route path="/admin/settings" element={<Settings />} />
+                </Route>
+                
+                {/* Rota inicial - Redirecionamento baseado em autenticação */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+};
 
 // Componente temporário para páginas ainda não implementadas
 const PlaceholderPage = ({ title }: { title: string }) => (

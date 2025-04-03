@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,25 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user, isNutritionist, isPatient, isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  // Redirecionamento quando o usuário já está autenticado
+  useEffect(() => {
+    if (user) {
+      redirectBasedOnRole();
+    }
+  }, [user]);
+
+  const redirectBasedOnRole = () => {
+    if (isNutritionist()) {
+      navigate("/", { replace: true });
+    } else if (isPatient()) {
+      navigate("/patient/progress", { replace: true });
+    } else if (isAdmin()) {
+      navigate("/admin/nutritionists", { replace: true });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +39,7 @@ const Login = () => {
     try {
       await login(email, password);
       toast.success("Login realizado com sucesso!");
-      // O redirecionamento será automático pelo componente ProtectedRoute
+      redirectBasedOnRole();
     } catch (error) {
       toast.error("Falha no login. Verifique suas credenciais.");
       console.error(error);

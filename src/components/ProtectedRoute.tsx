@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Navigate, useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Navigate, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
@@ -16,6 +16,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, isLoading, isPatientOfCurrentNutritionist } = useAuth();
   const params = useParams();
+  const navigate = useNavigate();
   
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">Carregando...</div>;
@@ -32,9 +33,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     } else if (user.role === "nutritionist") {
       return <Navigate to="/" replace />;
     } else if (user.role === "admin") {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to="/admin/nutritionists" replace />;
     }
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
   
   // Verificar se um nutricionista está tentando acessar informações de um paciente que não é seu
