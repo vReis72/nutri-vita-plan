@@ -1,14 +1,31 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Settings as SettingsIcon, Mail, Bell, Shield } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Settings as SettingsIcon, Mail, Bell, Shield, Image, Phone, Building } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Settings = () => {
+  const [logoUrl, setLogoUrl] = useState<string>("");
+  const [logoPreview, setLogoPreview] = useState<string>("");
+  
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setLogoPreview(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -17,8 +34,9 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="geral" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-[400px]">
+        <TabsList className="grid w-full grid-cols-4 md:w-[500px]">
           <TabsTrigger value="geral">Geral</TabsTrigger>
+          <TabsTrigger value="contato">Contato</TabsTrigger>
           <TabsTrigger value="notificacoes">Notificações</TabsTrigger>
           <TabsTrigger value="seguranca">Segurança</TabsTrigger>
         </TabsList>
@@ -59,6 +77,84 @@ const Settings = () => {
                 <div className="space-y-2">
                   <Label htmlFor="app-name">Nome da Aplicação</Label>
                   <Input id="app-name" defaultValue="NutriVitaPlan" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="logo-upload">Logo da Plataforma</Label>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-24 w-24 rounded-md">
+                      {logoPreview ? (
+                        <AvatarImage src={logoPreview} alt="Logo Preview" className="object-cover" />
+                      ) : (
+                        <AvatarFallback className="rounded-md bg-muted flex items-center justify-center">
+                          <Image className="h-12 w-12 text-gray-400" />
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div className="flex-1">
+                      <Input
+                        id="logo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoChange}
+                        className="mb-2"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Tamanho recomendado: 512x512 pixels, formato PNG ou JPG
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <Button className="mt-4">Salvar Alterações</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="contato" className="pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="h-5 w-5 mr-2" />
+                Informações de Contato
+              </CardTitle>
+              <CardDescription>
+                Configure as informações de contato da plataforma
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contact-email">E-mail de Contato</Label>
+                  <div className="flex items-center">
+                    <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Input id="contact-email" type="email" placeholder="contato@empresa.com" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="contact-phone">Telefone de Contato</Label>
+                  <div className="flex items-center">
+                    <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Input id="contact-phone" type="tel" placeholder="(00) 00000-0000" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="company-address">Endereço</Label>
+                  <Textarea 
+                    id="company-address" 
+                    placeholder="Rua Exemplo, 123 - Bairro, Cidade - UF, CEP" 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="about-company">Sobre a Empresa</Label>
+                  <Textarea 
+                    id="about-company" 
+                    placeholder="Breve descrição sobre a empresa e seus serviços" 
+                  />
                 </div>
               </div>
               
