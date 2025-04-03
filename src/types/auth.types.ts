@@ -39,6 +39,14 @@ export interface PatientWithProfile {
   updatedAt: Date;
 }
 
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  date: Date;
+}
+
 export interface AuthContextType {
   user: AuthUser | null;
   profile: Profile | null;
@@ -56,7 +64,7 @@ export interface AuthContextType {
   getAllNutritionists: () => Promise<NutritionistWithProfile[]>;
   getAllPatients: () => Promise<PatientWithProfile[]>;
   transferPatient: (patientId: string, newNutritionistId: string) => Promise<void>;
-  notifications: any[];
+  notifications: Notification[];
   hasUnreadNotifications: boolean;
   markAllNotificationsAsRead: () => void;
   markNotificationAsRead: (id: string) => void;

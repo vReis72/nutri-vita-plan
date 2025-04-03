@@ -5,8 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { PatientCard } from "@/components/PatientCard";
-import { TransferPatientDialog } from "@/components/TransferPatientDialog";
+import PatientCard from "@/components/PatientCard";
+import TransferPatientDialog from "@/components/TransferPatientDialog";
 import { PatientWithProfile } from "@/types/auth.types";
 import { Skeleton } from "@/components/ui/skeleton";
 

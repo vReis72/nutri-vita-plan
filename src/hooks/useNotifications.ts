@@ -21,7 +21,7 @@ export const useNotifications = () => {
     },
   ]);
 
-  const unreadNotificationsCount = notifications.filter(n => !n.read).length;
+  const hasUnreadNotifications = notifications.some(n => !n.read);
 
   const markNotificationAsRead = (id: string) => {
     setNotifications(notifications.map(n => 
@@ -29,9 +29,14 @@ export const useNotifications = () => {
     ));
   };
 
+  const markAllNotificationsAsRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
+  };
+
   return {
     notifications,
-    unreadNotificationsCount,
+    hasUnreadNotifications,
     markNotificationAsRead,
+    markAllNotificationsAsRead,
   };
 };
