@@ -88,24 +88,53 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-200;
   }
 
   body {
     @apply bg-background text-foreground font-sans;
   }
+  
+  ::selection {
+    @apply bg-nutri-primary/30 text-foreground;
+  }
 }
 
 @layer components {
   .nutricard {
-    @apply bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow;
+    @apply bg-card rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow;
   }
   
   .dashboard-stat {
-    @apply bg-white rounded-lg shadow-sm p-5 flex flex-col;
+    @apply bg-card rounded-lg shadow-sm p-5 flex flex-col;
   }
   
   .input-nutri {
     @apply border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
   }
+  
+  .card-gradient {
+    @apply bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900;
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+  
+  .glass-effect {
+    @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm;
+  }
+}
+
+/* Transições e animações */
+.page-transition {
+  @apply animate-fade-in;
+}
+
+.menu-item-active {
+  @apply bg-nutri-primary/10 text-nutri-primary font-medium;
+}
+
+.menu-item-hover {
+  @apply hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200;
 }

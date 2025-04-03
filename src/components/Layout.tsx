@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Link, Outlet } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { 
   Home, 
   Users, 
@@ -8,7 +8,9 @@ import {
   BarChart, 
   Calculator, 
   Settings,
-  LogOut
+  LogOut,
+  ChevronRight,
+  User
 } from "lucide-react";
 
 import {
@@ -28,6 +30,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { cn } from "@/lib/utils";
 
 // Menu items
 const menuItems = [
@@ -61,11 +65,11 @@ const menuItems = [
 export const Layout = () => {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full bg-background transition-colors duration-300">
         <AppSidebar />
         <main className="flex-1 flex flex-col">
           <AppHeader />
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-3 md:p-6 transition-all duration-200">
             <Outlet />
           </div>
         </main>
@@ -75,14 +79,16 @@ export const Layout = () => {
 };
 
 const AppSidebar = () => {
+  const location = useLocation();
+  
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-4 py-2">
-          <span className="text-xl font-bold text-nutri-secondary">
+        <div className="flex items-center gap-2 p-2">
+          <span className="text-xl font-bold text-nutri-secondary transition-colors duration-300 dark:text-white">
             NutriVita
           </span>
-          <span className="text-nutri-primary font-semibold">Plan</span>
+          <span className="text-nutri-primary font-semibold transition-colors duration-300">Plan</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -92,10 +98,20 @@ const AppSidebar = () => {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <Link to={item.path}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                  <SidebarMenuButton asChild tooltip={item.title} 
+                    data-active={location.pathname === item.path}>
+                    <Link to={item.path} className="group">
+                      <item.icon className={cn(
+                        "h-4 w-4 transition-transform duration-200", 
+                        location.pathname === item.path ? "text-nutri-primary" : ""
+                      )} />
+                      <span className={cn(
+                        location.pathname === item.path ? "font-medium" : ""
+                      )}>{item.title}</span>
+                      <ChevronRight className={cn(
+                        "ml-auto h-4 w-4 opacity-0 transition-all",
+                        location.pathname === item.path ? "opacity-100" : "group-hover:opacity-70"
+                      )} />
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -106,8 +122,22 @@ const AppSidebar = () => {
       </SidebarContent>
       <SidebarFooter>
         <div className="px-3 py-2">
+          <SidebarMenuButton asChild tooltip="Perfil">
+            <Link to="/profile" className={cn(
+              "w-full transition-colors",
+              location.pathname === "/profile" ? "text-nutri-primary" : ""
+            )}>
+              <User className="h-4 w-4" />
+              <span>Perfil</span>
+            </Link>
+          </SidebarMenuButton>
+        </div>
+        <div className="px-3 py-2">
           <SidebarMenuButton asChild tooltip="Configurações">
-            <Link to="/settings" className="w-full">
+            <Link to="/settings" className={cn(
+              "w-full transition-colors",
+              location.pathname === "/settings" ? "text-nutri-primary" : ""
+            )}>
               <Settings className="h-4 w-4" />
               <span>Configurações</span>
             </Link>
@@ -122,21 +152,26 @@ const AppHeader = () => {
   const { toggleSidebar } = useSidebar();
   
   return (
-    <header className="border-b bg-white py-3 px-4">
+    <header className="border-b py-3 px-4 bg-background transition-colors duration-300 dark:border-gray-700">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <SidebarTrigger />
-          <h1 className="text-xl font-semibold text-nutri-secondary">NutriVita Plan</h1>
+          <SidebarTrigger className="text-foreground transition-colors duration-300" />
+          <h1 className="text-xl font-semibold text-nutri-secondary transition-colors duration-300 dark:text-white">NutriVita Plan</h1>
         </div>
         <div className="flex items-center gap-4">
+          <ThemeToggle />
+          
           <Button variant="outline" size="sm" className="hidden md:flex">
             <LogOut className="mr-2 h-4 w-4" />
             Sair
           </Button>
-          <Avatar>
-            <AvatarImage src="" alt="Nutricionista" />
-            <AvatarFallback className="bg-nutri-primary text-white">N</AvatarFallback>
-          </Avatar>
+          
+          <Link to="/profile">
+            <Avatar className="border-2 border-transparent hover:border-nutri-primary transition-all duration-200">
+              <AvatarImage src="" alt="Nutricionista" />
+              <AvatarFallback className="bg-nutri-primary text-white">N</AvatarFallback>
+            </Avatar>
+          </Link>
         </div>
       </div>
     </header>
