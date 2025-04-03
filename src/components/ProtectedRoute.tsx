@@ -1,19 +1,22 @@
 
 import React from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: ("nutritionist" | "patient")[];
+  checkPatientAccess?: boolean;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  allowedRoles = ["nutritionist", "patient"] 
+  allowedRoles = ["nutritionist", "patient"],
+  checkPatientAccess = false
 }) => {
-  const { user, isLoading } = useAuth();
-
+  const { user, isLoading, isPatientOfCurrentNutritionist } = useAuth();
+  const params = useParams();
+  
   if (isLoading) {
     // Podemos adicionar um componente de loading aqui
     return <div className="flex h-screen items-center justify-center">Carregando...</div>;
@@ -25,6 +28,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
+  }
+  
+  // Verificar se um nutricionista está tentando acessar informações de um paciente que não é seu
+  if (checkPatientAccess && user.role === "nutritionist" && params.patientId) {
+    const canAccessPatient = isPatientOfCurrentNutritionist(params.patientId);
+    if (!canAccessPatient) {
+      // Redirecionar para a lista de pacientes com uma mensagem de erro
+      return <Navigate to="/patients" replace />;
+    }
+  }
+  
+  // Verificar se um paciente está tentando acessar informações de outro paciente
+  if (checkPatientAccess && user.role === "patient" && params.patientId) {
+    if (user.patientId !== params.patientId) {
+      // Redirecionar para a página inicial do paciente
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;
