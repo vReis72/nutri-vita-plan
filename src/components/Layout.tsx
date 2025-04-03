@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { 
   Home, 
@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Menu items
 const menuItems = [
@@ -150,6 +151,7 @@ const AppSidebar = () => {
 
 const AppHeader = () => {
   const { toggleSidebar } = useSidebar();
+  const { user, logout } = useAuth();
   
   return (
     <header className="border-b py-3 px-4 bg-background transition-colors duration-300 dark:border-gray-700">
@@ -161,7 +163,7 @@ const AppHeader = () => {
         <div className="flex items-center gap-4">
           <ThemeToggle />
           
-          <Button variant="outline" size="sm" className="hidden md:flex">
+          <Button variant="outline" size="sm" onClick={logout} className="hidden md:flex">
             <LogOut className="mr-2 h-4 w-4" />
             Sair
           </Button>
@@ -169,7 +171,9 @@ const AppHeader = () => {
           <Link to="/profile">
             <Avatar className="border-2 border-transparent hover:border-nutri-primary transition-all duration-200">
               <AvatarImage src="" alt="Nutricionista" />
-              <AvatarFallback className="bg-nutri-primary text-white">N</AvatarFallback>
+              <AvatarFallback className="bg-nutri-primary text-white">
+                {user?.name.charAt(0) || "N"}
+              </AvatarFallback>
             </Avatar>
           </Link>
         </div>
