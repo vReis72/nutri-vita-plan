@@ -10,7 +10,9 @@ const Calculator = () => {
         <p className="text-gray-500 mt-1">Calcule métricas corporais e necessidades nutricionais</p>
       </div>
 
-      <NutriCalculator />
+      <div className="bg-white rounded-lg shadow-sm p-4 md:p-6">
+        <NutriCalculator />
+      </div>
     </div>
   );
 };

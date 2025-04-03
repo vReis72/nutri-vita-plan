@@ -8,132 +8,138 @@ import {
   BarChart, 
   Calculator, 
   Settings,
-  Menu,
-  X
+  LogOut
 } from "lucide-react";
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Menu items
+const menuItems = [
+  {
+    title: "Dashboard",
+    icon: Home,
+    path: "/",
+  },
+  {
+    title: "Pacientes",
+    icon: Users,
+    path: "/patients",
+  },
+  {
+    title: "Planos Alimentares",
+    icon: Utensils,
+    path: "/diet-plans",
+  },
+  {
+    title: "Avaliações",
+    icon: BarChart,
+    path: "/assessments",
+  },
+  {
+    title: "Calculadora",
+    icon: Calculator,
+    path: "/calculator",
+  },
+];
 
 export const Layout = () => {
-  const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile);
-
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <div 
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-md transition-transform duration-300 ease-in-out border-r",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-          isMobile && "md:hidden"
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-4 border-b flex items-center justify-between">
-            <Link to="/" className="flex items-center">
-              <span className="text-2xl font-bold text-nutri-secondary">
-                NutriVita
-              </span>
-              <span className="ml-1 text-nutri-primary font-semibold">Plan</span>
-            </Link>
-            {isMobile && (
-              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
-                <X size={20} />
-              </Button>
-            )}
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <AppSidebar />
+        <main className="flex-1 flex flex-col">
+          <AppHeader />
+          <div className="flex-1 p-6">
+            <Outlet />
           </div>
-
-          {/* Menu Items */}
-          <nav className="flex-1 px-2 py-4 space-y-1">
-            <Link
-              to="/"
-              className="flex items-center px-4 py-3 text-gray-700 rounded-md hover:bg-nutri-light hover:text-nutri-secondary transition-colors"
-            >
-              <Home size={20} className="mr-3" />
-              Dashboard
-            </Link>
-            <Link
-              to="/patients"
-              className="flex items-center px-4 py-3 text-gray-700 rounded-md hover:bg-nutri-light hover:text-nutri-secondary transition-colors"
-            >
-              <Users size={20} className="mr-3" />
-              Pacientes
-            </Link>
-            <Link
-              to="/diet-plans"
-              className="flex items-center px-4 py-3 text-gray-700 rounded-md hover:bg-nutri-light hover:text-nutri-secondary transition-colors"
-            >
-              <Utensils size={20} className="mr-3" />
-              Planos Alimentares
-            </Link>
-            <Link
-              to="/assessments"
-              className="flex items-center px-4 py-3 text-gray-700 rounded-md hover:bg-nutri-light hover:text-nutri-secondary transition-colors"
-            >
-              <BarChart size={20} className="mr-3" />
-              Avaliações
-            </Link>
-            <Link
-              to="/calculator"
-              className="flex items-center px-4 py-3 text-gray-700 rounded-md hover:bg-nutri-light hover:text-nutri-secondary transition-colors"
-            >
-              <Calculator size={20} className="mr-3" />
-              Calculadora
-            </Link>
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t">
-            <Link
-              to="/settings"
-              className="flex items-center px-4 py-2 text-gray-700 rounded-md hover:bg-nutri-light hover:text-nutri-secondary transition-colors"
-            >
-              <Settings size={20} className="mr-3" />
-              Configurações
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div 
-        className={cn(
-          "flex-1 transition-all duration-300",
-          sidebarOpen ? (isMobile ? "ml-0" : "ml-64") : "ml-0"
-        )}
-      >
-        {/* Navbar */}
-        <header className="bg-white shadow-sm py-3 px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              {!sidebarOpen && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="mr-2"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  <Menu size={20} />
-                </Button>
-              )}
-              <h1 className="text-xl font-semibold text-nutri-secondary">NutriVita Plan</h1>
-            </div>
-            <div className="flex items-center">
-              <div className="rounded-full w-8 h-8 bg-nutri-primary text-white flex items-center justify-center">
-                <span className="font-semibold">N</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <main className="p-6">
-          <Outlet />
         </main>
       </div>
-    </div>
+    </SidebarProvider>
+  );
+};
+
+const AppSidebar = () => {
+  return (
+    <Sidebar>
+      <SidebarHeader>
+        <div className="flex items-center gap-2 px-4 py-2">
+          <span className="text-xl font-bold text-nutri-secondary">
+            NutriVita
+          </span>
+          <span className="text-nutri-primary font-semibold">Plan</span>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <Link to={item.path}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="px-3 py-2">
+          <SidebarMenuButton asChild tooltip="Configurações">
+            <Link to="/settings" className="w-full">
+              <Settings className="h-4 w-4" />
+              <span>Configurações</span>
+            </Link>
+          </SidebarMenuButton>
+        </div>
+      </SidebarFooter>
+    </Sidebar>
+  );
+};
+
+const AppHeader = () => {
+  const { toggleSidebar } = useSidebar();
+  
+  return (
+    <header className="border-b bg-white py-3 px-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <SidebarTrigger />
+          <h1 className="text-xl font-semibold text-nutri-secondary">NutriVita Plan</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" className="hidden md:flex">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
+          <Avatar>
+            <AvatarImage src="" alt="Nutricionista" />
+            <AvatarFallback className="bg-nutri-primary text-white">N</AvatarFallback>
+          </Avatar>
+        </div>
+      </div>
+    </header>
   );
 };
 
