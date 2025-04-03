@@ -57,7 +57,7 @@ const App = () => (
                 <Route path="/settings" element={<PlaceholderPage title="Configurações" />} />
               </Route>
               
-              {/* Rotas para pacientes - CORRIGIDO: Separando estrutura de rota */}
+              {/* Rotas para pacientes */}
               <Route 
                 element={
                   <ProtectedRoute allowedRoles={["patient"]}>
@@ -65,7 +65,7 @@ const App = () => (
                   </ProtectedRoute>
                 }
               >
-                <Route path="/patient" element={<PatientProgress />} />
+                <Route path="/patient" element={<Navigate to="/patient/progress" replace />} />
                 <Route path="/patient/progress" element={<PatientProgress />} />
                 <Route path="/patient/assessments" element={<PatientAssessments />} />
                 <Route path="/patient/profile" element={<PatientProfile />} />
@@ -85,7 +85,7 @@ const App = () => (
                 <Route path="/admin/settings" element={<Settings />} />
               </Route>
               
-              {/* Rota de redirecionamento para páginas de perfil */}
+              {/* Rota de redirecionamento para página de login quando não logado */}
               <Route path="/" element={
                 <Navigate replace to="/login" />
               } />

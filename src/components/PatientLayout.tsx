@@ -40,9 +40,9 @@ const patientMenuItems = [
 export const PatientLayout = () => {
   const { logout, user, isPatient } = useAuth();
   
-  // Redirecionar se não for paciente
-  if (!isPatient()) {
-    return <Navigate to="/login" />;
+  // Redirecionar se não for paciente ou se o usuário não estiver autenticado
+  if (!user || !isPatient()) {
+    return <Navigate to="/login" replace />;
   }
   
   return (

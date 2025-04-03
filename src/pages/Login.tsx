@@ -22,7 +22,7 @@ const Login = () => {
     try {
       await login(email, password);
       toast.success("Login realizado com sucesso!");
-      navigate("/");
+      // O redirecionamento será automático pelo componente ProtectedRoute
     } catch (error) {
       toast.error("Falha no login. Verifique suas credenciais.");
       console.error(error);

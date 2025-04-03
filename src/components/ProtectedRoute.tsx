@@ -28,7 +28,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (!allowedRoles.includes(user.role)) {
     // Redirecionar para a rota apropriada baseado no papel do usuário
     if (user.role === "patient") {
-      return <Navigate to="/" replace />;
+      return <Navigate to="/patient/progress" replace />;
     } else if (user.role === "nutritionist") {
       return <Navigate to="/" replace />;
     } else if (user.role === "admin") {
@@ -50,7 +50,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (checkPatientAccess && user.role === "patient" && params.patientId) {
     if (user.patientId !== params.patientId) {
       // Redirecionar para a página inicial do paciente
-      return <Navigate to="/" replace />;
+      return <Navigate to="/patient/progress" replace />;
     }
   }
 
