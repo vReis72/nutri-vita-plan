@@ -25,7 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  if (profile && !allowedRoles.includes(profile.role)) {
+  if (profile && profile.role && !allowedRoles.includes(profile.role)) {
     // Redirecionar para a rota apropriada baseado no papel do usuário
     if (profile.role === "patient") {
       return <Navigate to="/patient/progress" replace />;

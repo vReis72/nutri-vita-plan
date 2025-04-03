@@ -1,195 +1,171 @@
-
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import PatientCard from "@/components/PatientCard";
-import TransferPatientDialog from "@/components/TransferPatientDialog";
 import { PatientWithProfile } from "@/types/auth.types";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Search, UserCog } from "lucide-react";
+import TransferPatientDialog from "@/components/TransferPatientDialog";
 
-const AdminPatients = () => {
-  const { getAllPatients, getAllNutritionists } = useAuth();
+const Patients = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+  const [patients, setPatients] = useState<PatientWithProfile[]>([]);
+  const [filteredPatients, setFilteredPatients] = useState<PatientWithProfile[]>([]);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<PatientWithProfile | null>(null);
+  const { getAllPatients } = useAuth();
 
-  const { 
-    data: patients, 
-    isLoading, 
-    error,
-    refetch: refetchPatients
-  } = useQuery({
-    queryKey: ['admin-patients'],
-    queryFn: getAllPatients
-  });
+  useEffect(() => {
+    const fetchPatients = async () => {
+      const fetchedPatients = await getAllPatients();
+      setPatients(fetchedPatients);
+      setFilteredPatients(fetchedPatients);
+    };
 
-  const { data: nutritionists = [] } = useQuery({
-    queryKey: ['admin-nutritionists'],
-    queryFn: getAllNutritionists
-  });
+    fetchPatients();
+  }, [getAllPatients]);
 
-  const filteredPatients = patients?.filter(patient => 
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    patient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.nutritionistName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    const results = patients.filter((patient) =>
+      patient.profileName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredPatients(results);
+  }, [searchTerm, patients]);
 
-  const patientsWithNutritionist = filteredPatients?.filter(
-    patient => patient.nutritionistId !== null && patient.nutritionistId !== undefined
-  );
-
-  const patientsWithoutNutritionist = filteredPatients?.filter(
-    patient => patient.nutritionistId === null || patient.nutritionistId === undefined
-  );
-
-  const handleTransferClick = (patientId: string) => {
-    setSelectedPatientId(patientId);
-    setIsTransferDialogOpen(true);
+  const handleTransferClick = (patient: PatientWithProfile) => {
+    setSelectedPatient(patient);
+    setIsTransferOpen(true);
   };
 
-  const handleTransferComplete = () => {
-    setIsTransferDialogOpen(false);
-    setSelectedPatientId(null);
-    refetchPatients();
+  const handleTransferClose = () => {
+    setIsTransferOpen(false);
+    setSelectedPatient(null);
+  };
+
+  const handlePatientTransferred = () => {
+    // Refresh patient list
+    getAllPatients().then(fetchedPatients => {
+      setPatients(fetchedPatients);
+      setFilteredPatients(fetchedPatients);
+    });
+  };
+
+  const getGoalBadge = (goal?: string) => {
+    switch (goal) {
+      case "weightLoss":
+        return <Badge variant="destructive">Emagrecimento</Badge>;
+      case "weightGain":
+        return <Badge variant="default">Ganho de massa</Badge>;
+      case "maintenance":
+        return <Badge variant="outline">Manutenção</Badge>;
+      default:
+        return <Badge variant="secondary">Não definido</Badge>;
+    }
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Pacientes
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Gerencie todos os pacientes do sistema
-        </p>
-      </div>
-
-      <div className="mb-4">
-        <Input
-          placeholder="Buscar pacientes..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList>
-          <TabsTrigger value="all">Todos</TabsTrigger>
-          <TabsTrigger value="with-nutritionist">Com Nutricionista</TabsTrigger>
-          <TabsTrigger value="without-nutritionist">Sem Nutricionista</TabsTrigger>
-        </TabsList>
-
-        <div className="mt-4">
-          <TabsContent value="all" className="m-0">
-            <PatientsList 
-              patients={filteredPatients} 
-              isLoading={isLoading} 
-              error={error}
-              onTransferClick={handleTransferClick}
-            />
-          </TabsContent>
-          
-          <TabsContent value="with-nutritionist" className="m-0">
-            <PatientsList 
-              patients={patientsWithNutritionist} 
-              isLoading={isLoading} 
-              error={error}
-              onTransferClick={handleTransferClick}
-            />
-          </TabsContent>
-          
-          <TabsContent value="without-nutritionist" className="m-0">
-            <PatientsList 
-              patients={patientsWithoutNutritionist} 
-              isLoading={isLoading} 
-              error={error}
-              onTransferClick={handleTransferClick}
-            />
-          </TabsContent>
+      <div className="flex flex-col md:flex-row items-center justify-between space-y-2 md:space-y-0">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold tracking-tight">Pacientes</h2>
+          <p className="text-muted-foreground">
+            Gerencie os pacientes e transfira para outros nutricionistas.
+          </p>
         </div>
-      </Tabs>
-
-      {selectedPatientId && nutritionists.length > 0 && (
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Pacientes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar pacientes..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">Foto</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Objetivo</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPatients.map((patient) => (
+                  <TableRow key={patient.id}>
+                    <TableCell className="font-medium">
+                      <Avatar>
+                        {patient.photoUrl ? (
+                          <AvatarImage src={patient.photoUrl} alt={patient.profileName} />
+                        ) : (
+                          <AvatarFallback>{getInitials(patient.profileName)}</AvatarFallback>
+                        )}
+                      </Avatar>
+                    </TableCell>
+                    <TableCell>{patient.profileName}</TableCell>
+                    <TableCell>{patient.email}</TableCell>
+                    <TableCell>{patient.phone}</TableCell>
+                    <TableCell>{getGoalBadge(patient.goal)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" onClick={() => handleTransferClick(patient)}>
+                        <UserCog className="mr-2 h-4 w-4" />
+                        Transferir
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredPatients.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">
+                      Nenhum paciente encontrado.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+      {selectedPatient && (
         <TransferPatientDialog
-          patient={patients?.find(p => p.id === selectedPatientId) || {
-            id: selectedPatientId,
-            name: "Paciente",
-            age: 0,
-            gender: "male",
-            height: 0,
-            weight: 0,
-            goal: "maintenance",
-            profileName: "",
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }}
-          open={isTransferDialogOpen}
-          onOpenChange={setIsTransferDialogOpen}
-          onTransferComplete={handleTransferComplete}
+          open={isTransferOpen}
+          onClose={handleTransferClose}
+          patient={selectedPatient}
+          onTransferred={handlePatientTransferred}
         />
       )}
     </div>
   );
 };
 
-interface PatientsListProps {
-  patients?: PatientWithProfile[];
-  isLoading: boolean;
-  error: unknown;
-  onTransferClick: (patientId: string) => void;
-}
-
-const PatientsList = ({ patients, isLoading, error, onTransferClick }: PatientsListProps) => {
-  if (isLoading) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <Skeleton className="h-24 w-full" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-red-500">
-          Erro ao carregar pacientes. Por favor, tente novamente.
-        </p>
-      </div>
-    );
-  }
-
-  if (!patients || patients.length === 0) {
-    return (
-      <div className="text-center py-10">
-        <p className="text-gray-500 dark:text-gray-400">
-          Nenhum paciente encontrado.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {patients.map((patient) => (
-        <PatientCard
-          key={patient.id}
-          patient={patient as any}
-          showTransfer={true}
-          onTransferClick={() => onTransferClick(patient.id)}
-        />
-      ))}
-    </div>
-  );
-};
-
-export default AdminPatients;
+export default Patients;

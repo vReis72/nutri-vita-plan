@@ -16,15 +16,15 @@ const Login = () => {
   const [name, setName] = useState("");
   const [role, setRole] = useState<"nutritionist" | "patient" | "admin">("patient");
   const [isLoading, setIsLoading] = useState(false);
-  const { user, login, signup, loginWithProvider, isNutritionist, isPatient, isAdmin } = useAuth();
+  const { user, login, register, loginWithProvider, isNutritionist, isPatient, isAdmin, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Redirecionamento quando o usuário já está autenticado
   useEffect(() => {
-    if (user) {
+    if (isAuthenticated) {
       redirectBasedOnRole();
     }
-  }, [user]);
+  }, [isAuthenticated]);
 
   const redirectBasedOnRole = () => {
     if (isNutritionist()) {
@@ -63,7 +63,7 @@ const Login = () => {
     }
 
     try {
-      await signup(email, password, name, role);
+      await register(email, password, name, role);
       toast.success("Cadastro realizado com sucesso! Verifique seu email para confirmação.");
       setIsSignUp(false); // Volta para a tela de login
     } catch (error: any) {

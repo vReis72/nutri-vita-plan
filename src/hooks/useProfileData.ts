@@ -30,7 +30,7 @@ export const useProfileData = (user: User | null) => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      let { data: profile, error, status } = await supabase
+      let { data: profileData, error, status } = await supabase
         .from("profiles")
         .select(`name, photo_url, role`)
         .eq("id", user?.id)
@@ -40,12 +40,15 @@ export const useProfileData = (user: User | null) => {
         throw error;
       }
 
-      if (profile) {
+      if (profileData) {
         setProfile({
           id: user!.id,
-          name: profile.name,
-          photoUrl: profile.photo_url || null,
-          role: profile.role,
+          userId: user!.id,
+          name: profileData.name,
+          photoUrl: profileData.photo_url || null,
+          role: profileData.role,
+          createdAt: new Date(),
+          updatedAt: new Date()
         });
       }
     } catch (error: any) {
@@ -71,11 +74,16 @@ export const useProfileData = (user: User | null) => {
       if (data) {
         setNutritionist({
           id: data.id,
+          userId: user!.id,
           profileId: data.profile_id,
           name: profile!.name,
-          specialties: data.specialization ? [data.specialization] : [],
-          bio: data.license_number || "",
+          email: user!.email!,
+          specialization: data.specialization,
+          biography: data.license_number,
+          yearsOfExperience: 0,
           photoUrl: profile!.photoUrl,
+          specialties: data.specialization ? [data.specialization] : [],
+          bio: data.license_number || ""
         });
       }
     } catch (error: any) {
@@ -106,7 +114,7 @@ export const useProfileData = (user: User | null) => {
           .from("nutritionists")
           .update({ 
             license_number: nutritionist.bio,
-            specialization: nutritionist.specialties.length > 0 ? nutritionist.specialties[0] : null 
+            specialization: nutritionist.specialties && nutritionist.specialties.length > 0 ? nutritionist.specialties[0] : null 
           })
           .eq("profile_id", user!.id);
           

@@ -14,6 +14,7 @@ export interface Profile {
   userId: string;
   name: string;
   photoUrl?: string;
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,7 +51,7 @@ export interface Notification {
   date: Date;
 }
 
-export interface PatientWithProfile extends Omit<Patient, 'createdAt' | 'updatedAt'> {
+export interface PatientWithProfile {
   id: string;
   profileName: string;
   nutritionistId?: string;
@@ -71,12 +72,15 @@ export interface PatientWithProfile extends Omit<Patient, 'createdAt' | 'updated
 export interface NutritionistWithProfile {
   id: string;
   userId: string;
+  profileId: string;
   name: string;
   email: string;
   photoUrl?: string;
   specialization?: string;
   biography?: string;
   yearsOfExperience?: number;
+  specialties?: string[];
+  bio?: string;
 }
 
 export interface AuthContextType {
@@ -89,6 +93,8 @@ export interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
+  signup: (email: string, password: string, name: string, role: UserRole) => Promise<void>;
+  loginWithProvider: (provider: string) => Promise<void>;
   getPatientProfile: (id: string) => Promise<PatientWithProfile | null>;
   getAllPatients: () => Promise<PatientWithProfile[]>;
   getAllNutritionists: () => Promise<NutritionistWithProfile[]>;
@@ -98,4 +104,9 @@ export interface AuthContextType {
   isPatient: () => boolean;
   isPatientOfCurrentNutritionist: (patientId: string) => boolean;
   unreadNotificationsCount: number;
+  notifications: Notification[];
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
+  hasUnreadNotifications: boolean;
+  updateProfile: (updates: { name: string; photoUrl: string | null }) => Promise<void>;
 }

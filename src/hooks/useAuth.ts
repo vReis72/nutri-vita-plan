@@ -99,19 +99,24 @@ export const useAuth = () => {
     }
   };
 
+  const register = signup; // Alias for signup function
+
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
+      console.log("Attempting login with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Login error:", error);
         throw error;
       }
 
       if (data.user) {
+        console.log("Login successful:", data.user);
         setUser(data.user);
       }
     } catch (error: any) {
@@ -161,16 +166,20 @@ export const useAuth = () => {
     }
   };
 
+  const isAuthenticated = !!user;
+
   return {
     session,
     user,
     profile,
     nutritionist,
     signup,
+    register,
     login,
     loginWithProvider,
     logout,
     updateProfile,
     isLoading: loading || profileLoading,
+    isAuthenticated,
   };
 };

@@ -14,11 +14,17 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 export const NotificationsPopover = () => {
-  const { notifications = [], unreadNotificationsCount = 0, markNotificationAsRead } = useAuth();
+  const { notifications, unreadNotificationsCount, markNotificationAsRead, markAllNotificationsAsRead } = useAuth();
   
   const handleMarkAsRead = (id: string) => {
     if (markNotificationAsRead) {
       markNotificationAsRead(id);
+    }
+  };
+  
+  const handleMarkAllAsRead = () => {
+    if (markAllNotificationsAsRead) {
+      markAllNotificationsAsRead();
     }
   };
   
@@ -38,12 +44,12 @@ export const NotificationsPopover = () => {
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="font-medium">Notificações</h3>
           {unreadNotificationsCount > 0 && (
-            <Button variant="link" size="sm" className="h-auto p-0">
+            <Button variant="link" size="sm" className="h-auto p-0" onClick={handleMarkAllAsRead}>
               Marcar todas como lidas
             </Button>
           )}
         </div>
-        {notifications.length > 0 ? (
+        {notifications && notifications.length > 0 ? (
           <ScrollArea className="h-[300px]">
             <div className="flex flex-col">
               {notifications.map((notification) => (

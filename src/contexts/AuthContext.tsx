@@ -19,9 +19,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     ...roleChecks,
     ...dataFetching,
     notifications: notificationsSystem.notifications,
-    hasUnreadNotifications: notificationsSystem.hasUnreadNotifications,
+    unreadNotificationsCount: notificationsSystem.hasUnreadNotifications ? 1 : 0,
     markNotificationAsRead: notificationsSystem.markNotificationAsRead,
     markAllNotificationsAsRead: notificationsSystem.markAllNotificationsAsRead,
+    hasUnreadNotifications: notificationsSystem.hasUnreadNotifications,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
