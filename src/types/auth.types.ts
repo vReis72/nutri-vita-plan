@@ -5,7 +5,7 @@ export type UserRole = "admin" | "nutritionist" | "patient";
 
 export interface User {
   id: string;
-  email: string;
+  email: string | null;
   role: UserRole;
 }
 
@@ -60,11 +60,11 @@ export interface PatientWithProfile {
   photoUrl?: string;
   email?: string;
   phone?: string;
-  age: number;
-  gender: 'male' | 'female';
-  height: number;
-  weight: number;
-  goal: 'weightLoss' | 'weightGain' | 'maintenance';
+  age?: number;
+  gender?: 'male' | 'female';
+  height?: number;
+  weight?: number;
+  goal?: 'weightLoss' | 'weightGain' | 'maintenance';
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -75,7 +75,7 @@ export interface NutritionistWithProfile {
   userId: string;
   profileId: string;
   name: string;
-  email: string;
+  email?: string;
   photoUrl?: string;
   specialization?: string;
   biography?: string;

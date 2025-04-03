@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -19,7 +18,7 @@ const Login = () => {
   const { user, login, register, loginWithProvider, isNutritionist, isPatient, isAdmin, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Redirecionamento quando o usuário já está autenticado
+  // Redirect when user is authenticated
   useEffect(() => {
     if (isAuthenticated) {
       redirectBasedOnRole();
@@ -27,12 +26,15 @@ const Login = () => {
   }, [isAuthenticated]);
 
   const redirectBasedOnRole = () => {
+    console.log("Redirecting based on role");
     if (isNutritionist()) {
       navigate("/", { replace: true });
     } else if (isPatient()) {
       navigate("/patient/progress", { replace: true });
     } else if (isAdmin()) {
       navigate("/admin/nutritionists", { replace: true });
+    } else {
+      console.log("No role determined for redirect");
     }
   };
 
@@ -43,7 +45,7 @@ const Login = () => {
     try {
       await login(email, password);
       toast.success("Login realizado com sucesso!");
-      // O redirecionamento acontece pelo useEffect quando o usuário for definido
+      // Redirection happens in the useEffect when isAuthenticated updates
     } catch (error: any) {
       console.error("Erro de login:", error);
       toast.error(`Falha no login: ${error.message || "Verifique suas credenciais"}`);

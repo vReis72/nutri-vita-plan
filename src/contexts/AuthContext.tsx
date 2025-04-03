@@ -14,8 +14,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const dataFetching = useDataFetching(auth.profile, auth.nutritionist?.id || null);
   const notificationsSystem = useNotifications();
 
+  // Create a properly typed context value that matches AuthContextType
   const value: AuthContextType = {
-    ...auth,
+    user: auth.user,
+    profile: auth.profile,
+    nutritionist: auth.nutritionist,
+    patient: auth.patient,
+    isAuthenticated: auth.isAuthenticated,
+    isLoading: auth.isLoading,
+    login: auth.login,
+    logout: auth.logout,
+    register: auth.register,
+    signup: auth.signup,
+    loginWithProvider: auth.loginWithProvider,
+    updateProfile: auth.updateProfile,
     ...roleChecks,
     ...dataFetching,
     notifications: notificationsSystem.notifications,

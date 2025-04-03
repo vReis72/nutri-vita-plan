@@ -13,12 +13,11 @@ import {
 import PatientCard from "@/components/PatientCard";
 import { UserPlus, Search, Filter } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { PatientWithProfile } from "@/types/auth.types";
 
 const Patients = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterGoal, setFilterGoal] = useState("all");
-  const [patients, setPatients] = useState<PatientWithProfile[]>([]);
+  const [patients, setPatients] = useState([]);
   const { user, profile, nutritionist, getAllPatients } = useAuth();
 
   useEffect(() => {

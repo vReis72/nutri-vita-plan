@@ -1,26 +1,40 @@
 
 import { useState, useEffect } from "react";
-import { Session, User, AuthChangeEvent, Provider } from "@supabase/supabase-js";
+import { Session, User as SupabaseUser, AuthChangeEvent, Provider } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Profile, PatientProfile } from "@/types/auth.types";
+import { Profile, PatientProfile, User } from "@/types/auth.types";
 import { useProfileData } from "./useProfileData";
 
 export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [patient, setPatient] = useState<PatientProfile | null>(null);
   const navigate = useNavigate();
   
-  const { profile, nutritionist, loading: profileLoading, updateProfile } = useProfileData(user);
+  const { profile, nutritionist, loading: profileLoading, updateProfile } = useProfileData(supabaseUser);
+
+  useEffect(() => {
+    // Map Supabase user to our User type when profile is loaded
+    if (supabaseUser && profile) {
+      setUser({
+        id: supabaseUser.id,
+        email: supabaseUser.email,
+        role: profile.role
+      });
+    } else if (!supabaseUser) {
+      setUser(null);
+    }
+  }, [supabaseUser, profile]);
 
   useEffect(() => {
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
-        setUser(session?.user ?? null);
+        setSupabaseUser(session?.user ?? null);
       } catch (error) {
         console.error("Erro ao obter a sessão:", error);
       } finally {
@@ -28,14 +42,14 @@ export const useAuth = () => {
       }
     };
 
-    // Configurar ouvinte de alterações de autenticação PRIMEIRO
+    // Setup auth change listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      console.log(`Auth event: ${event}`);
       setSession(session);
-      setUser(session?.user ?? null);
-      console.log(`Evento de autenticação: ${event}`);
+      setSupabaseUser(session?.user ?? null);
     });
 
-    // DEPOIS verificar a sessão existente
+    // THEN check existing session
     getInitialSession();
 
     return () => {
@@ -158,7 +172,7 @@ export const useAuth = () => {
 
       if (data.user) {
         console.log("Login successful:", data.user);
-        setUser(data.user);
+        setSupabaseUser(data.user);
       }
     } catch (error: any) {
       console.error("Erro ao fazer login:", error.message);
