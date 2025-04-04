@@ -12,6 +12,14 @@ export interface Patient {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  // Adicionando campo para múltiplas fotos de acompanhamento
+  progressPhotos?: {
+    id: string;
+    url: string;
+    date: Date;
+    caption?: string;
+  }[];
+  profilePhoto?: string;
 }
 
 export interface Assessment {

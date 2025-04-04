@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -98,6 +98,10 @@
   ::selection {
     @apply bg-nutri-primary/30 text-foreground;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
 }
 
 @layer components {
@@ -124,6 +128,14 @@
   .glass-effect {
     @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm;
   }
+
+  .shimmer-effect {
+    @apply bg-gradient-to-r from-transparent via-white/20 to-transparent bg-[length:200%_100%] animate-shimmer;
+  }
+
+  .animate-float {
+    @apply animate-bounce-subtle;
+  }
 }
 
 /* Transições e animações */
@@ -137,4 +149,30 @@
 
 .menu-item-hover {
   @apply hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200;
+}
+
+/* Animações de entrada para listas */
+.stagger-item {
+  animation: fade-in-up 0.5s ease forwards;
+  opacity: 0;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Classes úteis adicionais */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-pretty {
+  text-wrap: pretty;
 }
