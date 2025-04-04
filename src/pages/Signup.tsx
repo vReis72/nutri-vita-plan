@@ -202,182 +202,184 @@ const Signup = () => {
               </Tabs>
             </CardHeader>
             <CardContent>
-              <TabsContent value="signup">
-                <div className="mb-4">
-                  <CardDescription>
-                    Preencha os dados abaixo para criar sua conta
-                  </CardDescription>
-                </div>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome completo</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Seu nome completo" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="seu.email@exemplo.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Senha</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="******" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Mínimo de 6 caracteres
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirme sua senha</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="******" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tipo de conta</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Tabs value={tab} className="w-full">
+                <TabsContent value="signup">
+                  <div className="mb-4">
+                    <CardDescription>
+                      Preencha os dados abaixo para criar sua conta
+                    </CardDescription>
+                  </div>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome completo</FormLabel>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o tipo de conta" />
-                              </SelectTrigger>
+                              <Input placeholder="Seu nome completo" {...field} />
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="patient">Paciente</SelectItem>
-                              <SelectItem value="nutritionist">Nutricionista</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Escolha o tipo de conta que deseja criar
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input type="email" placeholder="seu.email@exemplo.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Senha</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="******" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Mínimo de 6 caracteres
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirme sua senha</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="******" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tipo de conta</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o tipo de conta" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="patient">Paciente</SelectItem>
+                                <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              Escolha o tipo de conta que deseja criar
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
+                      <Button 
+                        type="submit" 
+                        className="w-full bg-nutri-primary hover:bg-nutri-secondary" 
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Cadastrando..." : "Cadastrar"}
+                      </Button>
+                      
+                      <div className="text-center text-sm text-gray-500">
+                        Problemas no cadastro?{" "}
+                        <Link to="/login" className="font-semibold text-nutri-primary hover:underline">
+                          Entre em contato
+                        </Link>
+                      </div>
+                    </form>
+                  </Form>
+                </TabsContent>
+                
+                <TabsContent value="login">
+                  <div className="mb-4">
+                    <CardDescription>
+                      Digite suas credenciais para acessar o sistema
+                    </CardDescription>
+                  </div>
+                  
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <FormLabel htmlFor="email">Email</FormLabel>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="seu.email@exemplo.com"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <FormLabel htmlFor="password">Senha</FormLabel>
+                      <Input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="******"
+                        required
+                      />
+                    </div>
                     <Button 
                       type="submit" 
                       className="w-full bg-nutri-primary hover:bg-nutri-secondary" 
                       disabled={isLoading}
                     >
-                      {isLoading ? "Cadastrando..." : "Cadastrar"}
+                      {isLoading ? "Entrando..." : "Entrar"}
                     </Button>
                     
                     <div className="text-center text-sm text-gray-500">
-                      Problemas no cadastro?{" "}
-                      <Link to="/login" className="font-semibold text-nutri-primary hover:underline">
-                        Entre em contato
+                      <Link to="#" className="font-semibold text-nutri-primary hover:underline">
+                        Esqueceu sua senha?
                       </Link>
                     </div>
                   </form>
-                </Form>
-              </TabsContent>
-              
-              <TabsContent value="login">
-                <div className="mb-4">
-                  <CardDescription>
-                    Digite suas credenciais para acessar o sistema
-                  </CardDescription>
-                </div>
-                
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <FormLabel htmlFor="email">Email</FormLabel>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="seu.email@exemplo.com"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <FormLabel htmlFor="password">Senha</FormLabel>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="******"
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-nutri-primary hover:bg-nutri-secondary" 
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Entrando..." : "Entrar"}
-                  </Button>
                   
-                  <div className="text-center text-sm text-gray-500">
-                    <Link to="#" className="font-semibold text-nutri-primary hover:underline">
-                      Esqueceu sua senha?
-                    </Link>
-                  </div>
-                </form>
-                
-                <div className="mt-5 pt-5 border-t">
-                  <div className="text-gray-500 dark:text-gray-400 text-center">
-                    <p className="font-medium mb-2">Credenciais de teste:</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-left">
-                      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                        <p className="font-semibold">Nutricionista:</p>
-                        <p>login@nutricionista.com</p>
-                        <p>senha123</p>
-                      </div>
-                      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                        <p className="font-semibold">Paciente:</p>
-                        <p>paciente@email.com</p>
-                        <p>senha123</p>
-                      </div>
-                      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                        <p className="font-semibold">Administrador:</p>
-                        <p>admin@email.com</p>
-                        <p>admin123</p>
+                  <div className="mt-5 pt-5 border-t">
+                    <div className="text-gray-500 dark:text-gray-400 text-center">
+                      <p className="font-medium mb-2">Credenciais de teste:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-left">
+                        <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                          <p className="font-semibold">Nutricionista:</p>
+                          <p>login@nutricionista.com</p>
+                          <p>senha123</p>
+                        </div>
+                        <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                          <p className="font-semibold">Paciente:</p>
+                          <p>paciente@email.com</p>
+                          <p>senha123</p>
+                        </div>
+                        <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                          <p className="font-semibold">Administrador:</p>
+                          <p>admin@email.com</p>
+                          <p>admin123</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
+                </TabsContent>
+              </Tabs>
               
               {errorDetails && (
                 <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-xs overflow-auto max-h-40">
