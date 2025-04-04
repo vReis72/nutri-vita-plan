@@ -1,6 +1,6 @@
 
 import React from "react";
-import { NutritionistProfile } from "@/components/NutritionistProfile";
+import { NutritionistProfile } from "@/modules/nutritionists/components/NutritionistProfile";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Home } from "lucide-react";
 
