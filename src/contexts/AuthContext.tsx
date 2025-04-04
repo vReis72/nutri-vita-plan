@@ -33,7 +33,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     patient: auth.patient,
     isAuthenticated: auth.isAuthenticated,
     isLoading: auth.isLoading,
-    login: auth.login,
+    login: async (email: string, password: string) => {
+      await auth.login(email, password);
+    },
     logout: auth.logout,
     register: auth.register,
     signup: auth.signup,
