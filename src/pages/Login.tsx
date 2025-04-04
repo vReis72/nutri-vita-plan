@@ -24,15 +24,19 @@ const Login = () => {
     if (isAuthenticated) {
       redirectBasedOnRole();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isNutritionist, isPatient, isAdmin]);
 
   const redirectBasedOnRole = () => {
     console.log("Redirecting based on role");
+    
     if (isNutritionist()) {
+      console.log("User is nutritionist, redirecting to /");
       navigate("/", { replace: true });
     } else if (isPatient()) {
+      console.log("User is patient, redirecting to /patient/progress");
       navigate("/patient/progress", { replace: true });
     } else if (isAdmin()) {
+      console.log("User is admin, redirecting to /admin/nutritionists");
       navigate("/admin/nutritionists", { replace: true });
     } else {
       console.log("No role determined for redirect");
@@ -44,12 +48,19 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      console.log("Login attempt with:", email);
       await login(email, password);
       toast.success("Login realizado com sucesso!");
-      // Redirection happens in the useEffect when isAuthenticated updates
+      
+      // Automatic redirect happens in the useEffect when isAuthenticated updates
     } catch (error: any) {
       console.error("Erro de login:", error);
       toast.error(`Falha no login: ${error.message || "Verifique suas credenciais"}`);
+      
+      // Add additional user feedback for common error cases
+      if (error.message?.includes("Invalid login credentials")) {
+        toast.error("Email ou senha incorretos. Verifique as credenciais de teste abaixo.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -66,12 +77,18 @@ const Login = () => {
     }
 
     try {
+      console.log("Registration attempt:", { email, name, role });
       await register(email, password, name, role);
-      toast.success("Cadastro realizado com sucesso! Verifique seu email para confirmação.");
+      toast.success("Cadastro realizado com sucesso! Você já pode fazer login.");
       setIsSignUp(false); // Volta para a tela de login
     } catch (error: any) {
       console.error("Erro de cadastro:", error);
       toast.error(`Falha no cadastro: ${error.message || "Tente novamente"}`);
+      
+      // Add specific error handling for common registration issues
+      if (error.message?.includes("already registered")) {
+        toast.error("Este email já está registrado. Tente fazer login.");
+      }
     } finally {
       setIsLoading(false);
     }

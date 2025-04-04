@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Session, User as SupabaseUser, AuthChangeEvent, Provider } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
@@ -105,6 +106,7 @@ export const useAuth = () => {
         options: {
           data: {
             role: role,
+            name: name, // Add name to user metadata for automatic profile creation
           },
         },
       });
@@ -114,36 +116,84 @@ export const useAuth = () => {
       }
 
       if (data.user) {
-        const updates = {
-          id: data.user.id,
-          name: name,
-          photo_url: null,
-          role: role,
-          updated_at: new Date().toISOString(),
-        };
+        // Check if a profile already exists
+        const { data: existingProfile, error: profileCheckError } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", data.user.id)
+          .single();
 
-        let { error: profileError } = await supabase.from("profiles").insert(updates);
-
-        if (profileError) {
-          throw profileError;
+        if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+          throw profileCheckError;
         }
 
-        if (role === "nutritionist") {
-          const { error: nutritionistError } = await supabase
-            .from("nutritionists")
-            .insert({
-              profile_id: data.user.id,
-              specialization: "",
-              license_number: "",
-            });
+        // If profile doesn't exist, create it
+        if (!existingProfile) {
+          const updates = {
+            id: data.user.id,
+            name: name,
+            photo_url: null,
+            role: role,
+          };
 
-          if (nutritionistError) {
-            throw nutritionistError;
+          let { error: profileError } = await supabase.from("profiles").insert(updates);
+
+          if (profileError) {
+            throw profileError;
           }
         }
 
-        setUser(data.user);
-        navigate("/", { replace: true });
+        if (role === "nutritionist") {
+          // Check if nutritionist record exists
+          const { data: existingNutritionist, error: nutritionistCheckError } = await supabase
+            .from("nutritionists")
+            .select("id")
+            .eq("profile_id", data.user.id)
+            .single();
+
+          if (nutritionistCheckError && nutritionistCheckError.code !== 'PGRST116') {
+            throw nutritionistCheckError;
+          }
+
+          // Create nutritionist record if it doesn't exist
+          if (!existingNutritionist) {
+            const { error: nutritionistError } = await supabase
+              .from("nutritionists")
+              .insert({
+                profile_id: data.user.id,
+                specialization: "",
+                license_number: "",
+              });
+
+            if (nutritionistError) {
+              throw nutritionistError;
+            }
+          }
+        } else if (role === "patient") {
+          // Check if patient record exists
+          const { data: existingPatient, error: patientCheckError } = await supabase
+            .from("patients")
+            .select("id")
+            .eq("profile_id", data.user.id)
+            .single();
+
+          if (patientCheckError && patientCheckError.code !== 'PGRST116') {
+            throw patientCheckError;
+          }
+
+          // Create patient record if it doesn't exist
+          if (!existingPatient) {
+            const { error: patientError } = await supabase
+              .from("patients")
+              .insert({
+                profile_id: data.user.id,
+              });
+
+            if (patientError) {
+              throw patientError;
+            }
+          }
+        }
       }
     } catch (error: any) {
       console.error("Erro ao registrar:", error.message);
@@ -169,10 +219,7 @@ export const useAuth = () => {
         throw error;
       }
 
-      if (data.user) {
-        console.log("Login successful:", data.user);
-        setSupabaseUser(data.user);
-      }
+      console.log("Login successful:", data);
     } catch (error: any) {
       console.error("Erro ao fazer login:", error.message);
       throw error;

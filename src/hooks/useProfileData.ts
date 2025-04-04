@@ -32,7 +32,7 @@ export const useProfileData = (user: User | null) => {
     try {
       let { data: profileData, error, status } = await supabase
         .from("profiles")
-        .select(`name, photo_url, role`)
+        .select(`name, photo_url, role, created_at, updated_at`)
         .eq("id", user?.id)
         .single();
 
@@ -45,10 +45,10 @@ export const useProfileData = (user: User | null) => {
           id: user!.id,
           userId: user!.id,
           name: profileData.name,
-          photoUrl: profileData.photo_url || null,
+          photoUrl: profileData.photo_url,
           role: profileData.role,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          createdAt: new Date(profileData.created_at),
+          updatedAt: new Date(profileData.updated_at)
         });
       }
     } catch (error: any) {
@@ -63,7 +63,7 @@ export const useProfileData = (user: User | null) => {
     try {
       let { data, error } = await supabase
         .from("nutritionists")
-        .select("*")
+        .select("*, created_at, updated_at")
         .eq("profile_id", user!.id)
         .single();
 
@@ -83,7 +83,9 @@ export const useProfileData = (user: User | null) => {
           yearsOfExperience: 0,
           photoUrl: profile!.photoUrl,
           specialties: data.specialization ? [data.specialization] : [],
-          bio: data.license_number || ""
+          bio: data.license_number || "",
+          createdAt: new Date(data.created_at),
+          updatedAt: new Date(data.updated_at)
         });
       }
     } catch (error: any) {

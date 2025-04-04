@@ -14,11 +14,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const dataFetching = useDataFetching(auth.profile, auth.nutritionist?.id || null);
   const notificationsSystem = useNotifications();
 
+  // Convert NutritionistWithProfile to NutritionistProfile if needed
+  const nutritionistProfile = auth.nutritionist ? {
+    id: auth.nutritionist.id,
+    profileId: auth.nutritionist.profileId,
+    specialization: auth.nutritionist.specialization,
+    biography: auth.nutritionist.biography,
+    yearsOfExperience: auth.nutritionist.yearsOfExperience,
+    createdAt: auth.nutritionist.createdAt || new Date(),
+    updatedAt: auth.nutritionist.updatedAt || new Date()
+  } as NutritionistProfile : null;
+
   // Create a properly typed context value that matches AuthContextType
   const value: AuthContextType = {
     user: auth.user,
     profile: auth.profile,
-    nutritionist: auth.nutritionist as NutritionistProfile | null,
+    nutritionist: nutritionistProfile,
     patient: auth.patient,
     isAuthenticated: auth.isAuthenticated,
     isLoading: auth.isLoading,

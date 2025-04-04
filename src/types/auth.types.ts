@@ -1,6 +1,4 @@
 
-import { Patient } from "@/types";
-
 export type UserRole = "admin" | "nutritionist" | "patient";
 
 export interface User {
@@ -13,7 +11,7 @@ export interface Profile {
   id: string;
   userId: string;
   name: string;
-  photoUrl?: string;
+  photoUrl?: string | null;
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
@@ -22,8 +20,8 @@ export interface Profile {
 export interface NutritionistProfile {
   id: string;
   profileId: string;
-  specialization?: string;
-  biography?: string;
+  specialization?: string | null;
+  biography?: string | null;
   yearsOfExperience?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -32,13 +30,13 @@ export interface NutritionistProfile {
 export interface PatientProfile {
   id: string;
   profileId: string;
-  nutritionistId?: string;
-  age?: number;
-  gender?: 'male' | 'female';
-  height?: number;
-  weight?: number;
-  goal?: 'weightLoss' | 'weightGain' | 'maintenance';
-  notes?: string;
+  nutritionistId?: string | null;
+  age?: number | null;
+  gender?: 'male' | 'female' | null;
+  height?: number | null;
+  weight?: number | null;
+  goal?: 'weightLoss' | 'weightGain' | 'maintenance' | null;
+  notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,17 +53,17 @@ export interface PatientWithProfile {
   id: string;
   name: string;
   profileName: string;
-  nutritionistId?: string;
-  nutritionistName?: string;
-  photoUrl?: string;
-  email?: string;
-  phone?: string;
-  age?: number;
-  gender?: 'male' | 'female';
-  height?: number;
-  weight?: number;
-  goal?: 'weightLoss' | 'weightGain' | 'maintenance';
-  notes?: string;
+  nutritionistId?: string | null;
+  nutritionistName?: string | null;
+  photoUrl?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  age?: number | null;
+  gender?: 'male' | 'female' | null;
+  height?: number | null;
+  weight?: number | null;
+  goal?: 'weightLoss' | 'weightGain' | 'maintenance' | null;
+  notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -75,13 +73,16 @@ export interface NutritionistWithProfile {
   userId: string;
   profileId: string;
   name: string;
-  email?: string;
-  photoUrl?: string;
-  specialization?: string;
-  biography?: string;
+  email?: string | null;
+  photoUrl?: string | null;
+  specialization?: string | null;
+  biography?: string | null;
   yearsOfExperience?: number;
-  specialties?: string[];
-  bio?: string;
+  specialties?: string[] | null;
+  bio?: string | null;
+  // Adding these fields to match NutritionistProfile
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface AuthContextType {
