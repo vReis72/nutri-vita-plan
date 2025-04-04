@@ -1,0 +1,226 @@
+
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+const signupSchema = z.object({
+  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  confirmPassword: z.string().min(6, "Confirme sua senha"),
+  role: z.enum(["patient", "nutritionist"]),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+});
+
+type SignupFormData = z.infer<typeof signupSchema>;
+
+const Signup = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
+  const form = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "patient",
+    },
+  });
+
+  // Redirecionamento quando o usuário já está autenticado
+  useEffect(() => {
+    if (user) {
+      redirectBasedOnRole();
+    }
+  }, [user]);
+
+  const redirectBasedOnRole = () => {
+    if (user?.role === "nutritionist") {
+      navigate("/", { replace: true });
+    } else if (user?.role === "patient") {
+      navigate("/patient/progress", { replace: true });
+    } else if (user?.role === "admin") {
+      navigate("/admin/nutritionists", { replace: true });
+    }
+  };
+
+  const handleSignup = async (data: SignupFormData) => {
+    setIsLoading(true);
+
+    try {
+      const { email, password, name, role } = data;
+      
+      const { data: authData, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role,
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Registro realizado com sucesso! Verifique seu email para confirmar sua conta.");
+      navigate("/login");
+      
+    } catch (error: any) {
+      console.error("Erro ao registrar:", error);
+      
+      if (error.message.includes("already registered")) {
+        toast.error("Este e-mail já está registrado. Tente fazer login.");
+      } else {
+        toast.error(`Falha no registro: ${error.message}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-900">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-nutri-secondary">NutriVita<span className="text-nutri-primary">Plan</span></h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Crie sua conta para acessar a plataforma</p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Cadastre-se</CardTitle>
+            <CardDescription>
+              Preencha os dados abaixo para criar sua conta
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Seu nome completo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="seu.email@exemplo.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Senha</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="******" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Mínimo de 6 caracteres
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirme sua senha</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="******" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de conta</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo de conta" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="patient">Paciente</SelectItem>
+                          <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Escolha o tipo de conta que deseja criar
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button 
+                  type="submit" 
+                  className="w-full bg-nutri-primary hover:bg-nutri-secondary" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Cadastrando..." : "Cadastrar"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Já tem uma conta?{" "}
+              <Link to="/login" className="font-medium text-nutri-primary hover:underline">
+                Faça login
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Signup;

@@ -17,6 +17,7 @@ import Calculator from "./pages/Calculator";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import PatientProgress from "./pages/PatientProgress";
 import PatientAssessments from "./pages/PatientAssessments";
 import PatientProfile from "./pages/PatientProfile";
@@ -38,8 +39,9 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <Routes>
-                {/* Rota pública de login */}
+                {/* Rotas públicas */}
                 <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
                 
                 {/* Rotas para nutricionistas */}
                 <Route 

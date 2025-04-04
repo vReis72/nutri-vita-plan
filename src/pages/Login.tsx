@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +15,6 @@ const Login = () => {
   const { user, isNutritionist, isPatient, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Redirecionamento quando o usuário já está autenticado
   useEffect(() => {
     if (user) {
       redirectBasedOnRole();
@@ -127,15 +125,11 @@ const Login = () => {
             </div>
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-500">
-                Você também pode se registrar para criar uma nova conta
+                Não tem uma conta ainda?{" "}
+                <Link to="/signup" className="font-medium text-nutri-primary hover:underline">
+                  Registre-se
+                </Link>
               </p>
-              <Button 
-                variant="link" 
-                className="px-0 text-nutri-primary"
-                onClick={() => navigate("/signup")}
-              >
-                Criar conta
-              </Button>
             </div>
           </CardFooter>
         </Card>
