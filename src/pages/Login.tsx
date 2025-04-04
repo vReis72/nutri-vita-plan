@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, user, isNutritionist, isPatient, isAdmin } = useAuth();
+  const { user, isNutritionist, isPatient, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   // Redirecionamento quando o usuário já está autenticado
@@ -37,11 +38,19 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast.success("Login realizado com sucesso!");
       redirectBasedOnRole();
-    } catch (error) {
-      toast.error("Falha no login. Verifique suas credenciais.");
+    } catch (error: any) {
+      toast.error(`Falha no login: ${error.message || 'Verifique suas credenciais.'}`);
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -118,8 +127,15 @@ const Login = () => {
             </div>
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-500">
-                Utilize o botão Supabase no menu superior para conectar a um projeto Supabase
+                Você também pode se registrar para criar uma nova conta
               </p>
+              <Button 
+                variant="link" 
+                className="px-0 text-nutri-primary"
+                onClick={() => navigate("/signup")}
+              >
+                Criar conta
+              </Button>
             </div>
           </CardFooter>
         </Card>

@@ -1,6 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Session, User } from "@supabase/supabase-js";
 
 type UserRole = "nutritionist" | "patient" | "admin";
 
@@ -13,18 +14,18 @@ interface Notification {
   recipientId: string;
 }
 
-interface User {
+interface UserProfile {
   id: string;
   name: string;
   role: UserRole;
   photoUrl?: string;
-  patientId?: string; // Apenas para pacientes, referência ao seu ID
-  nutritionistId?: string; // Para pacientes: ID do nutricionista responsável
-  associatedPatients?: string[]; // Para nutricionistas: lista de IDs de pacientes
+  patientId?: string; 
+  nutritionistId?: string;
+  associatedPatients?: string[];
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: UserProfile | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -36,8 +37,8 @@ interface AuthContextType {
   notifications: Notification[];
   markNotificationAsRead: (notificationId: string) => void;
   unreadNotificationsCount: number;
-  getAllNutritionists: () => User[];
-  getAllPatients: () => User[];
+  getAllNutritionists: () => UserProfile[];
+  getAllPatients: () => UserProfile[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,7 +51,7 @@ export const useAuth = () => {
   return context;
 };
 
-// Mock de notificações para teste
+// Mock de notificações para teste (manteremos por enquanto)
 const mockNotifications: Notification[] = [
   {
     id: "1",
@@ -78,8 +79,8 @@ const mockNotifications: Notification[] = [
   }
 ];
 
-// Mock de usuários para teste
-const mockUsers: User[] = [
+// Mock de usuários para teste (manteremos por enquanto)
+const mockUsers: UserProfile[] = [
   // Nutricionistas
   {
     id: "nutr-1",
@@ -133,30 +134,106 @@ const mockUsers: User[] = [
 ];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Calcular o número de notificações não lidas
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
-  // Simular verificação de localStorage ao iniciar
+  // Monitorar o estado de autenticação do Supabase
   useEffect(() => {
-    const checkAuth = () => {
-      const storedUser = localStorage.getItem("currentUser");
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-        } catch (error) {
-          console.error("Erro ao analisar usuário do localStorage:", error);
-          localStorage.removeItem("currentUser"); // Remove dados inválidos
+    // Configurar o listener de mudanças de autenticação PRIMEIRO
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, currentSession) => {
+        setSession(currentSession);
+        
+        if (currentSession && currentSession.user) {
+          // Buscar perfil do usuário do Supabase
+          try {
+            setTimeout(async () => {
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentSession.user.id)
+                .single();
+                
+              if (error) throw error;
+              
+              if (profileData) {
+                const userProfile: UserProfile = {
+                  id: profileData.id,
+                  name: profileData.name,
+                  role: profileData.role,
+                  photoUrl: profileData.photo_url || undefined,
+                };
+                
+                // Se for nutricionista, buscar pacientes associados
+                if (profileData.role === 'nutritionist') {
+                  const { data: nutritionistData } = await supabase
+                    .from('nutritionists')
+                    .select('id')
+                    .eq('profile_id', profileData.id)
+                    .single();
+                    
+                  if (nutritionistData) {
+                    userProfile.nutritionistId = nutritionistData.id;
+                    
+                    // Buscar pacientes associados
+                    const { data: patientData } = await supabase
+                      .from('patients')
+                      .select('id')
+                      .eq('nutritionist_id', nutritionistData.id);
+                      
+                    if (patientData) {
+                      userProfile.associatedPatients = patientData.map(p => p.id);
+                    }
+                  }
+                }
+                
+                // Se for paciente, buscar nutricionista associado
+                if (profileData.role === 'patient') {
+                  const { data: patientData } = await supabase
+                    .from('patients')
+                    .select('id, nutritionist_id')
+                    .eq('profile_id', profileData.id)
+                    .single();
+                    
+                  if (patientData) {
+                    userProfile.patientId = patientData.id;
+                    userProfile.nutritionistId = patientData.nutritionist_id || undefined;
+                  }
+                }
+                
+                setUser(userProfile);
+              }
+            }, 0);
+          } catch (error) {
+            console.error('Erro ao buscar perfil:', error);
+            setUser(null);
+          }
+        } else {
+          setUser(null);
         }
       }
+    );
+
+    // DEPOIS verificar sessão existente
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      
+      if (currentSession && currentSession.user) {
+        // A busca do perfil vai acontecer via onAuthStateChange
+      } else {
+        setUser(null);
+      }
       setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
     };
-    
-    checkAuth();
   }, []);
 
   // Carregar notificações do usuário quando ele for autenticado
@@ -175,105 +252,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulando uma autenticação
-      // Em uma implementação real, aqui seria uma chamada à API
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
       
-      // Exemplo: nutricionista 1 - Ana login@nutricionista.com / senha123
-      if (email === "login@nutricionista.com" && password === "senha123") {
-        const nutritionist: User = {
-          id: "nutr-1",
-          name: "Dr. Ana Silva",
-          role: "nutritionist",
-          photoUrl: "",
-          associatedPatients: ["patient-1", "patient-2"] // IDs dos pacientes vinculados
-        };
-        setUser(nutritionist);
-        localStorage.setItem("currentUser", JSON.stringify(nutritionist));
-        return;
-      }
-      
-      // Exemplo: nutricionista 2 - Carlos carlos@nutricionista.com / senha123
-      if (email === "carlos@nutricionista.com" && password === "senha123") {
-        const nutritionist: User = {
-          id: "nutr-2",
-          name: "Dr. Carlos Oliveira",
-          role: "nutritionist",
-          photoUrl: "",
-          associatedPatients: ["patient-3"] // IDs dos pacientes vinculados
-        };
-        setUser(nutritionist);
-        localStorage.setItem("currentUser", JSON.stringify(nutritionist));
-        return;
-      }
-      
-      // Exemplo: paciente 1 - Maria (vinculado à Dra. Ana)
-      if (email === "paciente@email.com" && password === "senha123") {
-        const patient: User = {
-          id: "user-1",
-          name: "Maria Silva",
-          role: "patient",
-          patientId: "patient-1", // ID do paciente no sistema
-          nutritionistId: "nutr-1" // Vinculado à Dra. Ana
-        };
-        setUser(patient);
-        localStorage.setItem("currentUser", JSON.stringify(patient));
-        return;
-      }
-      
-      // Exemplo: paciente 2 - João (vinculado à Dra. Ana)
-      if (email === "joao@email.com" && password === "senha123") {
-        const patient: User = {
-          id: "user-2",
-          name: "João Santos",
-          role: "patient",
-          patientId: "patient-2", // ID do paciente no sistema
-          nutritionistId: "nutr-1" // Vinculado à Dra. Ana
-        };
-        setUser(patient);
-        localStorage.setItem("currentUser", JSON.stringify(patient));
-        return;
-      }
-      
-      // Exemplo: paciente 3 - Pedro (vinculado ao Dr. Carlos)
-      if (email === "pedro@email.com" && password === "senha123") {
-        const patient: User = {
-          id: "user-3",
-          name: "Pedro Costa",
-          role: "patient",
-          patientId: "patient-3", // ID do paciente no sistema
-          nutritionistId: "nutr-2" // Vinculado ao Dr. Carlos
-        };
-        setUser(patient);
-        localStorage.setItem("currentUser", JSON.stringify(patient));
-        return;
-      }
-      
-      // Exemplo: admin
-      if (email === "admin@email.com" && password === "admin123") {
-        const admin: User = {
-          id: "admin-1",
-          name: "Admin",
-          role: "admin"
-        };
-        setUser(admin);
-        localStorage.setItem("currentUser", JSON.stringify(admin));
-        return;
-      }
-      
-      throw new Error("Credenciais inválidas");
-    } catch (error) {
+      // O usuário será definido pelo onAuthStateChange
+      return;
+    } catch (error: any) {
       console.error("Erro no login:", error);
-      localStorage.removeItem("currentUser"); // Limpa dados em caso de erro
-      setUser(null);
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("currentUser");
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error("Erro no logout:", error);
+      toast.error("Erro ao fazer logout.");
+    }
   };
 
   const isNutritionist = () => {
@@ -299,7 +302,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Transferir um paciente para outro nutricionista
   const transferPatient = async (patientId: string, newNutritionistId: string) => {
     try {
-      // Em uma implementação real, aqui seria uma chamada à API
+      // Em uma implementação real, aqui seria uma chamada à API do Supabase
       
       // Verificar se o usuário atual é um nutricionista
       if (!user || user.role !== "nutritionist") {
@@ -311,24 +314,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Este paciente não está associado a você");
       }
       
-      // Atualizar o localStorage para simular a transferência
+      // Atualizar no Supabase
+      const { error } = await supabase
+        .from('patients')
+        .update({ nutritionist_id: newNutritionistId })
+        .eq('id', patientId);
+        
+      if (error) throw error;
       
-      // 1. Remover o paciente da lista do nutricionista atual
-      const updatedUser = { ...user };
-      if (updatedUser.associatedPatients) {
+      // Atualizar o estado local
+      if (user.associatedPatients) {
+        const updatedUser = { ...user };
         updatedUser.associatedPatients = updatedUser.associatedPatients.filter(
           id => id !== patientId
         );
         setUser(updatedUser);
-        localStorage.setItem("currentUser", JSON.stringify(updatedUser));
       }
       
-      // Simulando sucesso
       toast.success("Paciente transferido com sucesso.");
       
       return;
-    } catch (error) {
-      toast.error("Erro ao transferir paciente.");
+    } catch (error: any) {
+      toast.error(`Erro ao transferir paciente: ${error.message}`);
       throw error;
     }
   };
