@@ -31,6 +31,7 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -62,12 +63,31 @@ const Signup = () => {
 
   const handleSignup = async (data: SignupFormData) => {
     setIsLoading(true);
+    setErrorDetails(null);
 
     try {
       const { email, password, name, role } = data;
       
       console.log("Tentando criar usuário com:", { email, name, role });
       
+      // Primeiro verifica se o email já existe
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error("Erro ao verificar email:", checkError);
+      }
+      
+      if (existingUsers) {
+        toast.error("Este e-mail já está registrado. Tente fazer login.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Tenta criar o usuário
       const { data: authData, error } = await supabase.auth.signUp({
         email,
         password,
@@ -81,28 +101,40 @@ const Signup = () => {
 
       if (error) {
         console.error("Erro de autenticação:", error);
+        setErrorDetails(JSON.stringify(error, null, 2));
         throw error;
       }
 
       if (authData && authData.user) {
         console.log("Usuário criado com sucesso:", authData.user.id);
         toast.success("Registro realizado com sucesso! Verifique seu email para confirmar sua conta.");
-        navigate("/login");
+        
+        // Aguardar um momento para garantir que o trigger handle_new_user seja executado
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
       } else {
         console.error("Dados de autenticação incompletos");
+        setErrorDetails("Dados de autenticação retornados pelo Supabase estão incompletos");
         toast.error("Falha no registro: dados de autenticação incompletos");
       }
       
     } catch (error: any) {
       console.error("Erro detalhado ao registrar:", error);
       
-      if (error.message.includes("already registered")) {
+      if (typeof error === 'object' && error !== null) {
+        setErrorDetails(JSON.stringify(error, null, 2));
+      } else {
+        setErrorDetails(String(error));
+      }
+      
+      if (error.message?.includes("already registered")) {
         toast.error("Este e-mail já está registrado. Tente fazer login.");
-      } else if (error.message.includes("database")) {
-        toast.error("Erro ao salvar usuário. Por favor, tente novamente mais tarde.");
+      } else if (error.message?.includes("database") || error.message?.includes("Database")) {
+        toast.error("Erro no banco de dados. Entre em contato com o suporte técnico.");
         console.error("Erro de banco de dados:", error);
       } else {
-        toast.error(`Falha no registro: ${error.message}`);
+        toast.error(`Falha no registro: ${error.message || "Erro desconhecido"}`);
       }
     } finally {
       setIsLoading(false);
@@ -220,6 +252,13 @@ const Signup = () => {
                 </Button>
               </form>
             </Form>
+            
+            {errorDetails && (
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-xs overflow-auto max-h-40">
+                <p className="font-semibold text-red-600 dark:text-red-400 mb-1">Detalhes do erro (para suporte técnico):</p>
+                <pre className="whitespace-pre-wrap break-words text-red-600 dark:text-red-400">{errorDetails}</pre>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
