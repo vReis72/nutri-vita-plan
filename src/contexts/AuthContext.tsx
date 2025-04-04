@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     markNotificationAsRead: notificationsSystem.markNotificationAsRead,
     markAllNotificationsAsRead: notificationsSystem.markAllNotificationsAsRead,
     hasUnreadNotifications: notificationsSystem.hasUnreadNotifications,
-    patientsLoading: dataFetching.patientsLoading // Adicionando a propriedade patientsLoading
+    patientsLoading: dataFetching.patientsLoading
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

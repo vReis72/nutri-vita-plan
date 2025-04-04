@@ -6,7 +6,7 @@ export interface Patient {
   gender: 'male' | 'female';
   height: number; // em cm
   weight: number; // em kg
-  email?: string; // Tornando opcional para compatibilidade com PatientWithProfile
+  email?: string; // Opcional para compatibilidade com PatientWithProfile
   phone: string;
   goal: 'weightLoss' | 'weightGain' | 'maintenance';
   notes?: string;

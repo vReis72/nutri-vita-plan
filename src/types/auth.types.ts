@@ -56,7 +56,7 @@ export interface PatientWithProfile {
   nutritionistId?: string | null;
   nutritionistName?: string | null;
   photoUrl?: string | null;
-  email?: string | null;  // Ajustando para ser opcional
+  email?: string | null;
   phone?: string | null;
   age?: number | null;
   gender?: 'male' | 'female' | null;
