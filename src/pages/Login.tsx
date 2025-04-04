@@ -19,45 +19,57 @@ const Login = () => {
   const { isAuthenticated, login, register, loginWithProvider, isNutritionist, isPatient, isAdmin } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect when user is authenticated
+  // Verificar autenticação e redirecionar se já estiver autenticado
   useEffect(() => {
     if (isAuthenticated) {
+      console.log("Usuário autenticado, redirecionando com base no perfil");
       redirectBasedOnRole();
     }
-  }, [isAuthenticated, isNutritionist, isPatient, isAdmin]);
+  }, [isAuthenticated]);
 
   const redirectBasedOnRole = () => {
-    console.log("Redirecting based on role");
+    console.log("Redirecionando com base na função");
     
-    if (isNutritionist()) {
-      console.log("User is nutritionist, redirecting to /");
-      navigate("/", { replace: true });
-    } else if (isPatient()) {
-      console.log("User is patient, redirecting to /patient/progress");
-      navigate("/patient/progress", { replace: true });
-    } else if (isAdmin()) {
-      console.log("User is admin, redirecting to /admin/nutritionists");
-      navigate("/admin/nutritionists", { replace: true });
-    } else {
-      console.log("No role determined for redirect");
-    }
+    // Adicionar um pequeno atraso para garantir que os estados estejam atualizados
+    setTimeout(() => {
+      if (isNutritionist()) {
+        console.log("Usuário é nutricionista, redirecionando para /");
+        navigate("/", { replace: true });
+      } else if (isPatient()) {
+        console.log("Usuário é paciente, redirecionando para /patient/progress");
+        navigate("/patient/progress", { replace: true });
+      } else if (isAdmin()) {
+        console.log("Usuário é administrador, redirecionando para /admin/nutritionists");
+        navigate("/admin/nutritionists", { replace: true });
+      } else {
+        console.log("Função não determinada para redirecionamento");
+        // Redirecionar para uma página segura caso não seja possível determinar a função
+        navigate("/", { replace: true });
+      }
+    }, 500);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast.error("Por favor, preencha todos os campos");
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
-      console.log("Login attempt with:", email);
+      console.log("Tentativa de login com:", email);
       await login(email, password);
       toast.success("Login realizado com sucesso!");
       
-      // Automatic redirect happens in the useEffect when isAuthenticated updates
+      // O redirecionamento automático acontece no useEffect quando isAuthenticated é atualizado
     } catch (error: any) {
       console.error("Erro de login:", error);
       toast.error(`Falha no login: ${error.message || "Verifique suas credenciais"}`);
       
-      // Add additional user feedback for common error cases
+      // Adicionar feedback de usuário adicional para casos de erro comuns
       if (error.message?.includes("Invalid login credentials")) {
         toast.error("Email ou senha incorretos. Verifique as credenciais de teste abaixo.");
       }
@@ -68,16 +80,16 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    if (!name) {
-      toast.error("Por favor, informe seu nome");
-      setIsLoading(false);
+    
+    if (!email || !password || !name) {
+      toast.error("Por favor, preencha todos os campos");
       return;
     }
+    
+    setIsLoading(true);
 
     try {
-      console.log("Registration attempt:", { email, name, role });
+      console.log("Tentativa de cadastro:", { email, name, role });
       await register(email, password, name, role);
       toast.success("Cadastro realizado com sucesso! Você já pode fazer login.");
       setIsSignUp(false); // Volta para a tela de login
@@ -85,7 +97,7 @@ const Login = () => {
       console.error("Erro de cadastro:", error);
       toast.error(`Falha no cadastro: ${error.message || "Tente novamente"}`);
       
-      // Add specific error handling for common registration issues
+      // Lidar com erros específicos de registro comuns
       if (error.message?.includes("already registered")) {
         toast.error("Este email já está registrado. Tente fazer login.");
       }

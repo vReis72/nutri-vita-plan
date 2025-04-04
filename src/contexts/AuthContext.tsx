@@ -14,18 +14,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const dataFetching = useDataFetching(auth.profile, auth.nutritionist?.id || null);
   const notificationsSystem = useNotifications();
 
-  // Convert NutritionistWithProfile to NutritionistProfile if needed
+  // Garantir que o perfil de nutricionista seja corretamente convertido
   const nutritionistProfile = auth.nutritionist ? {
     id: auth.nutritionist.id,
     profileId: auth.nutritionist.profileId,
-    specialization: auth.nutritionist.specialization,
-    biography: auth.nutritionist.biography,
-    yearsOfExperience: auth.nutritionist.yearsOfExperience,
+    specialization: auth.nutritionist.specialization || null,
+    biography: auth.nutritionist.biography || null,
+    yearsOfExperience: auth.nutritionist.yearsOfExperience || 0,
     createdAt: auth.nutritionist.createdAt || new Date(),
     updatedAt: auth.nutritionist.updatedAt || new Date()
   } as NutritionistProfile : null;
 
-  // Create a properly typed context value that matches AuthContextType
+  // Criar um valor de contexto adequadamente tipado que corresponda a AuthContextType
   const value: AuthContextType = {
     user: auth.user,
     profile: auth.profile,

@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface LoginFormProps {
   email: string;
@@ -15,6 +19,13 @@ interface LoginFormProps {
   onSubmit: (e: React.FormEvent) => Promise<void>;
   onSocialLogin: (provider: "google") => Promise<void>;
 }
+
+const loginSchema = z.object({
+  email: z.string().email("Email inválido").min(1, "Email é obrigatório"),
+  password: z.string().min(1, "Senha é obrigatória")
+});
+
+type LoginValues = z.infer<typeof loginSchema>;
 
 const LoginForm = ({
   email,
@@ -36,6 +47,8 @@ const LoginForm = ({
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={isLoading}
+          className={isLoading ? "opacity-70" : ""}
         />
       </div>
       
@@ -47,6 +60,8 @@ const LoginForm = ({
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          disabled={isLoading}
+          className={isLoading ? "opacity-70" : ""}
         />
       </div>
       
