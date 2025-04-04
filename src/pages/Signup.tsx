@@ -70,22 +70,8 @@ const Signup = () => {
       
       console.log("Tentando criar usuário com:", { email, name, role });
       
-      // Primeiro verifica se o email já existe
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email)
-        .maybeSingle();
-        
-      if (checkError) {
-        console.error("Erro ao verificar email:", checkError);
-      }
-      
-      if (existingUsers) {
-        toast.error("Este e-mail já está registrado. Tente fazer login.");
-        setIsLoading(false);
-        return;
-      }
+      // Removemos a verificação de email existente que estava causando o erro
+      // e vamos confiar no tratamento de erro do Supabase
 
       // Tenta criar o usuário
       const { data: authData, error } = await supabase.auth.signUp({
