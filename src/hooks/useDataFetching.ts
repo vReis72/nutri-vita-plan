@@ -176,7 +176,9 @@ export const useDataFetching = (profile: Profile | null, nutritionistId: string 
             biography: nutritionistData.license_number,
             yearsOfExperience: 0,
             specialties: nutritionistData.specialization ? [nutritionistData.specialization] : [],
-            bio: nutritionistData.license_number || ""
+            bio: nutritionistData.license_number || "",
+            createdAt: new Date(nutritionistData.created_at), // Adicionando as propriedades que faltavam
+            updatedAt: new Date(nutritionistData.updated_at)  // Adicionando as propriedades que faltavam
           });
         }
       }

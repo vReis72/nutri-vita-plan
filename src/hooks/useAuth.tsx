@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile, PatientProfile, User } from "@/types/auth.types";
 import { useProfileData } from "./useProfileData";
+import { toast } from "sonner";
 
 export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -33,6 +34,7 @@ export const useAuth = () => {
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session:", session);
         setSession(session);
         setSupabaseUser(session?.user ?? null);
       } catch (error) {
@@ -45,6 +47,7 @@ export const useAuth = () => {
     // Setup auth change listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       console.log(`Auth event: ${event}`);
+      console.log("Session:", session);
       setSession(session);
       setSupabaseUser(session?.user ?? null);
     });
@@ -112,10 +115,13 @@ export const useAuth = () => {
       });
 
       if (error) {
+        console.error("Signup error:", error);
+        toast.error(`Erro de cadastro: ${error.message}`);
         throw error;
       }
 
       if (data.user) {
+        console.log("User registered:", data.user);
         // Check if a profile already exists
         const { data: existingProfile, error: profileCheckError } = await supabase
           .from("profiles")
@@ -194,9 +200,11 @@ export const useAuth = () => {
             }
           }
         }
+        toast.success("Cadastro realizado com sucesso!");
       }
     } catch (error: any) {
       console.error("Erro ao registrar:", error.message);
+      toast.error(`Erro ao registrar: ${error.message}`);
       throw error;
     } finally {
       setLoading(false);
@@ -216,12 +224,16 @@ export const useAuth = () => {
 
       if (error) {
         console.error("Login error:", error);
+        toast.error(`Erro de login: ${error.message}`);
         throw error;
       }
 
       console.log("Login successful:", data);
+      toast.success("Login realizado com sucesso!");
+      return data;
     } catch (error: any) {
       console.error("Erro ao fazer login:", error.message);
+      toast.error(`Erro ao fazer login: ${error.message}`);
       throw error;
     } finally {
       setLoading(false);
@@ -241,10 +253,13 @@ export const useAuth = () => {
 
       if (error) {
         console.error(`Erro ao fazer login com ${provider}:`, error);
+        toast.error(`Erro ao fazer login com ${provider}: ${error.message}`);
         throw error;
       }
+      toast.success(`Login com ${provider} iniciado. Redirecionando...`);
     } catch (error: any) {
       console.error(`Erro ao fazer login com ${provider}:`, error.message);
+      toast.error(`Erro ao fazer login com ${provider}: ${error.message}`);
       throw error;
     } finally {
       setLoading(false);
@@ -256,14 +271,18 @@ export const useAuth = () => {
     try {
       let { error } = await supabase.auth.signOut();
       if (error) {
+        console.error("Logout error:", error);
+        toast.error(`Erro ao sair: ${error.message}`);
         throw error;
       }
       setUser(null);
       setSession(null);
       setPatient(null);
+      toast.success("Logout realizado com sucesso!");
       navigate("/login", { replace: true });
     } catch (error: any) {
       console.error("Erro ao sair:", error.message);
+      toast.error(`Erro ao sair: ${error.message}`);
     } finally {
       setLoading(false);
     }

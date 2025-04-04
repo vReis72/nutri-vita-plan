@@ -49,6 +49,7 @@ const LoginForm = ({
           required
           disabled={isLoading}
           className={isLoading ? "opacity-70" : ""}
+          autoComplete="username"
         />
       </div>
       
@@ -62,6 +63,7 @@ const LoginForm = ({
           required
           disabled={isLoading}
           className={isLoading ? "opacity-70" : ""}
+          autoComplete="current-password"
         />
       </div>
       

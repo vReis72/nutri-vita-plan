@@ -80,7 +80,6 @@ export interface NutritionistWithProfile {
   yearsOfExperience?: number;
   specialties?: string[] | null;
   bio?: string | null;
-  // Adding these fields to match NutritionistProfile
   createdAt: Date;
   updatedAt: Date;
 }
@@ -111,4 +110,5 @@ export interface AuthContextType {
   markAllNotificationsAsRead: () => void;
   hasUnreadNotifications: boolean;
   updateProfile: (updates: { name: string; photoUrl: string | null }) => Promise<void>;
+  patientsLoading?: boolean;
 }
