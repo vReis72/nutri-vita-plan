@@ -224,7 +224,7 @@ const NutriCalculator = () => {
                   <SelectValue placeholder="Selecione um paciente" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Inserir dados manualmente</SelectItem>
+                  <SelectItem value="manual">Inserir dados manualmente</SelectItem>
                   {availablePatients.map((patient) => (
                     <SelectItem key={patient.id} value={patient.id}>
                       {patient.name}
