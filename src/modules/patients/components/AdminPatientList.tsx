@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,22 +25,36 @@ import {
   UserCheck
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Patient } from "../types";
+import { mockPatients } from "@/data/mockData";
 
 const AdminPatientList = () => {
-  const { getAllPatients, getAllNutritionists } = useAuth();
+  const { getAllPatients: getAllPatientUsers, getAllNutritionists } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [nutritionistFilter, setNutritionistFilter] = useState("all");
+  const [patients, setPatients] = useState<Patient[]>([]);
   
-  const patients = getAllPatients();
+  const patientUsers = getAllPatientUsers();
   const nutritionists = getAllNutritionists();
+
+  // Use mockPatients para obter os dados completos dos pacientes
+  useEffect(() => {
+    // Em um cenário real, isso seria uma chamada para API
+    setPatients(mockPatients);
+  }, []);
 
   const filteredPatients = useMemo(() => {
     return patients.filter(patient => {
+      // Encontrar o usuário correspondente ao paciente para verificar o nutricionista
+      const patientUser = patientUsers.find(user => user.patientId === patient.id);
+      
       const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesNutritionist = nutritionistFilter === "all" || patient.nutritionistId === nutritionistFilter;
-      return matchesSearch && matchesNutritionist;
+      const matchesNutritionist = nutritionistFilter === "all" || 
+        (patientUser && patientUser.nutritionistId === nutritionistFilter);
+        
+      return matchesSearch && (matchesNutritionist || nutritionistFilter === "all");
     });
-  }, [patients, searchTerm, nutritionistFilter]);
+  }, [patients, patientUsers, searchTerm, nutritionistFilter]);
 
   const getGoalIcon = (goal: string) => {
     switch (goal) {
@@ -84,6 +98,14 @@ const AdminPatientList = () => {
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 20 } }
   };
   
+  const getNutritionistForPatient = (patientId: string) => {
+    const patientUser = patientUsers.find(user => user.patientId === patientId);
+    if (patientUser && patientUser.nutritionistId) {
+      return nutritionists.find(n => n.id === patientUser.nutritionistId);
+    }
+    return null;
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-6 animate-fade-in">
@@ -140,7 +162,7 @@ const AdminPatientList = () => {
             animate="show"
           >
             {filteredPatients.map(patient => {
-              const nutritionist = nutritionists.find(n => n.id === patient.nutritionistId);
+              const nutritionist = getNutritionistForPatient(patient.id);
               const bmi = calculateBMI(patient.weight, patient.height);
               
               return (
