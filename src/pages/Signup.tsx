@@ -66,6 +66,8 @@ const Signup = () => {
     try {
       const { email, password, name, role } = data;
       
+      console.log("Tentando criar usuário com:", { email, name, role });
+      
       const { data: authData, error } = await supabase.auth.signUp({
         email,
         password,
@@ -78,17 +80,27 @@ const Signup = () => {
       });
 
       if (error) {
+        console.error("Erro de autenticação:", error);
         throw error;
       }
 
-      toast.success("Registro realizado com sucesso! Verifique seu email para confirmar sua conta.");
-      navigate("/login");
+      if (authData && authData.user) {
+        console.log("Usuário criado com sucesso:", authData.user.id);
+        toast.success("Registro realizado com sucesso! Verifique seu email para confirmar sua conta.");
+        navigate("/login");
+      } else {
+        console.error("Dados de autenticação incompletos");
+        toast.error("Falha no registro: dados de autenticação incompletos");
+      }
       
     } catch (error: any) {
-      console.error("Erro ao registrar:", error);
+      console.error("Erro detalhado ao registrar:", error);
       
       if (error.message.includes("already registered")) {
         toast.error("Este e-mail já está registrado. Tente fazer login.");
+      } else if (error.message.includes("database")) {
+        toast.error("Erro ao salvar usuário. Por favor, tente novamente mais tarde.");
+        console.error("Erro de banco de dados:", error);
       } else {
         toast.error(`Falha no registro: ${error.message}`);
       }
