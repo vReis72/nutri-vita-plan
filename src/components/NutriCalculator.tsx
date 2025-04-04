@@ -1,16 +1,15 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { mockPatients } from "@/data/mockData";
+import { Patient } from "@/modules/patients/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const NutriCalculator = () => {
   const [formData, setFormData] = useState({
@@ -20,7 +19,7 @@ export const NutriCalculator = () => {
     gender: "female",
     activityLevel: "moderate",
   });
-
+  
   const [results, setResults] = useState({
     bmi: null,
     bmr: null,
@@ -31,6 +30,28 @@ export const NutriCalculator = () => {
       fats: null,
     },
   });
+  
+  const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [availablePatients, setAvailablePatients] = useState<Patient[]>([]);
+  const { user, isPatientOfCurrentNutritionist } = useAuth();
+  const { toast } = useToast();
+
+  // Carrega os pacientes disponíveis para o nutricionista
+  useEffect(() => {
+    if (user?.role === "nutritionist" && user.associatedPatients) {
+      const filteredPatients = mockPatients.filter(patient => 
+        isPatientOfCurrentNutritionist(patient.id)
+      );
+      setAvailablePatients(filteredPatients);
+    } else if (user?.role === "patient" && user.patientId) {
+      // Se for um paciente, só mostra os próprios dados
+      const patientData = mockPatients.find(p => p.id === user.patientId);
+      if (patientData) {
+        setAvailablePatients([patientData]);
+        setSelectedPatientId(patientData.id);
+      }
+    }
+  }, [user, isPatientOfCurrentNutritionist]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,6 +60,29 @@ export const NutriCalculator = () => {
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePatientSelect = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    
+    // Encontra o paciente selecionado
+    const selectedPatient = availablePatients.find(p => p.id === patientId);
+    
+    if (selectedPatient) {
+      // Preenche o formulário com os dados do paciente
+      setFormData({
+        weight: selectedPatient.weight.toString(),
+        height: selectedPatient.height.toString(),
+        age: selectedPatient.age.toString(),
+        gender: selectedPatient.gender,
+        activityLevel: formData.activityLevel, // Mantém o nível de atividade atual
+      });
+      
+      toast({
+        title: "Dados carregados",
+        description: `Os dados de ${selectedPatient.name} foram carregados com sucesso.`,
+      });
+    }
   };
 
   const activityMultipliers = {
@@ -114,6 +158,28 @@ export const NutriCalculator = () => {
           </TabsList>
           
           <TabsContent value="metrics" className="space-y-4">
+            {availablePatients.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="patientSelect">Selecionar Paciente</Label>
+                <Select
+                  value={selectedPatientId}
+                  onValueChange={handlePatientSelect}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione um paciente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePatients.map(patient => (
+                      <SelectItem key={patient.id} value={patient.id}>
+                        {patient.name} ({patient.age} anos)
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="">Entrada manual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="weight">Peso (kg)</Label>
