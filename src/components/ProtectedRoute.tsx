@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Navigate, useParams } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Navigate, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
@@ -14,8 +14,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles = ["nutritionist", "patient", "admin"],
   checkPatientAccess = false
 }) => {
-  const { user, profile, isLoading, isPatientOfCurrentNutritionist } = useAuth();
+  const { user, isLoading, isPatientOfCurrentNutritionist } = useAuth();
   const params = useParams();
+  const navigate = useNavigate();
   
   if (isLoading) {
     return <div className="flex h-screen items-center justify-center">Carregando...</div>;
@@ -25,20 +26,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  if (profile && profile.role && !allowedRoles.includes(profile.role)) {
+  if (!allowedRoles.includes(user.role)) {
     // Redirecionar para a rota apropriada baseado no papel do usuário
-    if (profile.role === "patient") {
+    if (user.role === "patient") {
       return <Navigate to="/patient/progress" replace />;
-    } else if (profile.role === "nutritionist") {
+    } else if (user.role === "nutritionist") {
       return <Navigate to="/" replace />;
-    } else if (profile.role === "admin") {
+    } else if (user.role === "admin") {
       return <Navigate to="/admin/nutritionists" replace />;
     }
     return <Navigate to="/login" replace />;
   }
   
   // Verificar se um nutricionista está tentando acessar informações de um paciente que não é seu
-  if (checkPatientAccess && profile?.role === "nutritionist" && params.patientId) {
+  if (checkPatientAccess && user.role === "nutritionist" && params.patientId) {
     const canAccessPatient = isPatientOfCurrentNutritionist(params.patientId);
     if (!canAccessPatient) {
       // Redirecionar para a lista de pacientes com uma mensagem de erro
@@ -46,6 +47,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }
   
+  // Verificar se um paciente está tentando acessar informações de outro paciente
+  if (checkPatientAccess && user.role === "patient" && params.patientId) {
+    if (user.patientId !== params.patientId) {
+      // Redirecionar para a página inicial do paciente
+      return <Navigate to="/patient/progress" replace />;
+    }
+  }
+
   return <>{children}</>;
 };
 

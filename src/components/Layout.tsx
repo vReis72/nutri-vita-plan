@@ -13,7 +13,21 @@ import {
   User
 } from "lucide-react";
 
-import { Sidebar, SidebarTrigger, SidebarProvider } from "@/components/ui/sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -70,77 +84,74 @@ const AppSidebar = () => {
   
   return (
     <Sidebar>
-      <div className="flex flex-col h-full">
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-nutri-secondary transition-colors duration-300 dark:text-white">
-              NutriVita
-            </span>
-            <span className="text-nutri-primary font-semibold transition-colors duration-300">Plan</span>
-          </div>
+      <SidebarHeader>
+        <div className="flex items-center gap-2 p-2">
+          <span className="text-xl font-bold text-nutri-secondary transition-colors duration-300 dark:text-white">
+            NutriVita
+          </span>
+          <span className="text-nutri-primary font-semibold transition-colors duration-300">Plan</span>
         </div>
-
-        <div className="flex-1 py-4">
-          <div className="px-3 py-2">
-            <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">Menu</h2>
-            <div className="space-y-1">
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
               {menuItems.map((item) => (
-                <Link
-                  key={item.title}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground relative group",
-                    location.pathname === item.path 
-                      ? "text-nutri-primary bg-accent/50" 
-                      : "text-gray-600 dark:text-gray-300"
-                  )}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  <span>{item.title}</span>
-                  <ChevronRight className={cn(
-                    "ml-auto h-4 w-4 opacity-0 transition-all",
-                    location.pathname === item.path ? "opacity-100" : "group-hover:opacity-70"
-                  )} />
-                </Link>
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title} 
+                    data-active={location.pathname === item.path}>
+                    <Link to={item.path} className="group">
+                      <item.icon className={cn(
+                        "h-4 w-4 transition-transform duration-200", 
+                        location.pathname === item.path ? "text-nutri-primary" : ""
+                      )} />
+                      <span className={cn(
+                        location.pathname === item.path ? "font-medium" : ""
+                      )}>{item.title}</span>
+                      <ChevronRight className={cn(
+                        "ml-auto h-4 w-4 opacity-0 transition-all",
+                        location.pathname === item.path ? "opacity-100" : "group-hover:opacity-70"
+                      )} />
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               ))}
-            </div>
-          </div>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="px-3 py-2">
+          <SidebarMenuButton asChild tooltip="Perfil">
+            <Link to="/profile" className={cn(
+              "w-full transition-colors",
+              location.pathname === "/profile" ? "text-nutri-primary" : ""
+            )}>
+              <User className="h-4 w-4" />
+              <span>Perfil</span>
+            </Link>
+          </SidebarMenuButton>
         </div>
-
-        <div className="border-t p-3">
-          <Link
-            to="/profile"
-            className={cn(
-              "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground mb-1",
-              location.pathname === "/profile" 
-                ? "text-nutri-primary bg-accent/50" 
-                : "text-gray-600 dark:text-gray-300"
-            )}
-          >
-            <User className="mr-2 h-4 w-4" />
-            <span>Perfil</span>
-          </Link>
-          
-          <Link
-            to="/settings"
-            className={cn(
-              "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
-              location.pathname === "/settings" 
-                ? "text-nutri-primary bg-accent/50" 
-                : "text-gray-600 dark:text-gray-300"
-            )}
-          >
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Configurações</span>
-          </Link>
+        <div className="px-3 py-2">
+          <SidebarMenuButton asChild tooltip="Configurações">
+            <Link to="/settings" className={cn(
+              "w-full transition-colors",
+              location.pathname === "/settings" ? "text-nutri-primary" : ""
+            )}>
+              <Settings className="h-4 w-4" />
+              <span>Configurações</span>
+            </Link>
+          </SidebarMenuButton>
         </div>
-      </div>
+      </SidebarFooter>
     </Sidebar>
   );
 };
 
 const AppHeader = () => {
-  const { profile, logout } = useAuth();
+  const { toggleSidebar } = useSidebar();
+  const { user, logout } = useAuth();
   
   return (
     <header className="border-b py-3 px-4 bg-background transition-colors duration-300 dark:border-gray-700">
@@ -161,7 +172,7 @@ const AppHeader = () => {
             <Avatar className="border-2 border-transparent hover:border-nutri-primary transition-all duration-200">
               <AvatarImage src="" alt="Nutricionista" />
               <AvatarFallback className="bg-nutri-primary text-white">
-                {profile?.name.charAt(0) || "N"}
+                {user?.name.charAt(0) || "N"}
               </AvatarFallback>
             </Avatar>
           </Link>

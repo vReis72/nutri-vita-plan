@@ -8,7 +8,20 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
-import { Sidebar, SidebarTrigger, SidebarProvider } from "@/components/ui/sidebar";
+import { 
+  Sidebar, 
+  SidebarContent, 
+  SidebarFooter, 
+  SidebarGroup, 
+  SidebarGroupContent, 
+  SidebarGroupLabel, 
+  SidebarHeader, 
+  SidebarMenu, 
+  SidebarMenuButton, 
+  SidebarMenuItem, 
+  SidebarProvider, 
+  SidebarTrigger 
+} from "@/components/ui/sidebar";
 
 // Menu items para pacientes
 const patientMenuItems = [
@@ -25,7 +38,7 @@ const patientMenuItems = [
 ];
 
 export const PatientLayout = () => {
-  const { logout, user, profile, isPatient } = useAuth();
+  const { logout, user, isPatient } = useAuth();
   
   // Redirecionar se não for paciente ou se o usuário não estiver autenticado
   if (!user || !isPatient()) {
@@ -55,7 +68,7 @@ export const PatientLayout = () => {
                 <Avatar className="border-2 border-transparent hover:border-nutri-primary transition-all duration-200">
                   <AvatarImage src="" alt="Paciente" />
                   <AvatarFallback className="bg-nutri-primary text-white">
-                    {profile?.name.charAt(0) || "P"}
+                    {user?.name.charAt(0) || "P"}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -72,62 +85,62 @@ export const PatientLayout = () => {
 
 const PatientSidebar = () => {
   const location = useLocation();
-  const { profile } = useAuth();
+  const { user } = useAuth();
   
   return (
     <Sidebar>
-      <div className="flex flex-col h-full">
-        <div className="flex flex-col items-center gap-2 p-4 border-b">
+      <SidebarHeader>
+        <div className="flex flex-col items-center gap-2 p-4">
           <Avatar className="h-20 w-20">
             <AvatarImage src="" alt="Paciente" />
             <AvatarFallback className="bg-nutri-primary text-xl text-white">
-              {profile?.name.charAt(0) || "P"}
+              {user?.name.charAt(0) || "P"}
             </AvatarFallback>
           </Avatar>
           <div className="text-center">
-            <p className="font-semibold">{profile?.name || "Paciente"}</p>
+            <p className="font-semibold">{user?.name || "Paciente"}</p>
             <p className="text-sm text-gray-500">Área do Paciente</p>
           </div>
         </div>
-
-        <div className="flex-1 py-4">
-          <div className="px-3 py-2">
-            <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">Menu</h2>
-            <div className="space-y-1">
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
               {patientMenuItems.map((item) => (
-                <Link
-                  key={item.title}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
-                    location.pathname === item.path 
-                      ? "text-nutri-primary bg-accent/50"
-                      : "text-gray-600 dark:text-gray-300"
-                  )}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={item.title} 
+                    data-active={location.pathname === item.path}>
+                    <Link to={item.path} className="group">
+                      <item.icon className={cn(
+                        "h-4 w-4 transition-transform duration-200", 
+                        location.pathname === item.path ? "text-nutri-primary" : ""
+                      )} />
+                      <span className={cn(
+                        location.pathname === item.path ? "font-medium" : ""
+                      )}>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               ))}
-            </div>
-          </div>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="px-3 py-2">
+          <SidebarMenuButton asChild tooltip="Meu Perfil">
+            <Link to="/patient/profile" className={cn(
+              "w-full transition-colors",
+              location.pathname === "/patient/profile" ? "text-nutri-primary" : ""
+            )}>
+              <User className="h-4 w-4" />
+              <span>Meu Perfil</span>
+            </Link>
+          </SidebarMenuButton>
         </div>
-
-        <div className="border-t p-3">
-          <Link
-            to="/patient/profile"
-            className={cn(
-              "flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors w-full",
-              location.pathname === "/patient/profile"
-                ? "text-nutri-primary bg-accent/50"
-                : "text-gray-600 dark:text-gray-300"
-            )}
-          >
-            <User className="mr-2 h-4 w-4" />
-            <span>Meu Perfil</span>
-          </Link>
-        </div>
-      </div>
+      </SidebarFooter>
     </Sidebar>
   );
 };
