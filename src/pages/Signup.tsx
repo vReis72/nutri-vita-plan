@@ -13,6 +13,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 const signupSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -32,6 +34,7 @@ const Signup = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [dbError, setDbError] = useState<boolean>(false);
   
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -64,16 +67,15 @@ const Signup = () => {
   const handleSignup = async (data: SignupFormData) => {
     setIsLoading(true);
     setErrorDetails(null);
+    setDbError(false);
 
     try {
       const { email, password, name, role } = data;
       
       console.log("Tentando criar usuário com:", { email, name, role });
       
-      // Removemos a verificação de email existente que estava causando o erro
-      // e vamos confiar no tratamento de erro do Supabase
-
-      // Tenta criar o usuário
+      // Tenta criar o usuário sem verificar se o email já existe
+      // O Supabase irá retornar um erro apropriado se o email já estiver em uso
       const { data: authData, error } = await supabase.auth.signUp({
         email,
         password,
@@ -81,13 +83,23 @@ const Signup = () => {
           data: {
             name,
             role,
-          }
+          },
+          emailRedirectTo: window.location.origin + "/login",
         }
       });
 
       if (error) {
         console.error("Erro de autenticação:", error);
         setErrorDetails(JSON.stringify(error, null, 2));
+        
+        if (error.message?.includes("already registered")) {
+          toast.error("Este e-mail já está registrado. Tente fazer login.");
+        } else if (error.status === 500) {
+          setDbError(true);
+          toast.error("Erro no servidor. Entre em contato com o suporte técnico.");
+        } else {
+          toast.error(`Falha no registro: ${error.message || "Erro desconhecido"}`);
+        }
         throw error;
       }
 
@@ -114,14 +126,7 @@ const Signup = () => {
         setErrorDetails(String(error));
       }
       
-      if (error.message?.includes("already registered")) {
-        toast.error("Este e-mail já está registrado. Tente fazer login.");
-      } else if (error.message?.includes("database") || error.message?.includes("Database")) {
-        toast.error("Erro no banco de dados. Entre em contato com o suporte técnico.");
-        console.error("Erro de banco de dados:", error);
-      } else {
-        toast.error(`Falha no registro: ${error.message || "Erro desconhecido"}`);
-      }
+      // O tratamento específico dos erros já está sendo feito acima
     } finally {
       setIsLoading(false);
     }
@@ -134,6 +139,17 @@ const Signup = () => {
           <h1 className="text-3xl font-bold text-nutri-secondary">NutriVita<span className="text-nutri-primary">Plan</span></h1>
           <p className="mt-2 text-gray-600 dark:text-gray-400">Crie sua conta para acessar a plataforma</p>
         </div>
+
+        {dbError && (
+          <Alert variant="destructive" className="mb-4">
+            <InfoIcon className="h-4 w-4" />
+            <AlertTitle>Problema no banco de dados</AlertTitle>
+            <AlertDescription>
+              Detectamos um problema de configuração no banco de dados. 
+              Por favor, entre em contato com o suporte técnico e informe o erro abaixo.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card>
           <CardHeader>
