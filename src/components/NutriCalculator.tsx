@@ -1,41 +1,48 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { mockPatients } from "@/data/mockData";
-import { Patient } from "@/modules/patients/types";
+import { Patient } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 
-export const NutriCalculator = () => {
-  const [formData, setFormData] = useState({
-    weight: "",
-    height: "",
-    age: "",
-    gender: "female",
-    activityLevel: "moderate",
-  });
+const NutriCalculator = () => {
+  // Estado para identificar se os dados foram buscados de um paciente
+  const [fromPatient, setFromPatient] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("imc");
+  const { toast } = useToast();
+  const { user, isPatientOfCurrentNutritionist } = useAuth();
   
-  const [results, setResults] = useState({
-    bmi: null,
-    bmr: null,
-    tdee: null,
-    macros: {
-      carbs: null,
-      proteins: null,
-      fats: null,
-    },
-  });
+  // Estados para os cálculos
+  const [gender, setGender] = useState("female");
+  const [age, setAge] = useState("");
+  const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const [activityLevel, setActivityLevel] = useState("sedentary");
   
+  // Selecionar paciente (para nutricionistas)
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const [availablePatients, setAvailablePatients] = useState<Patient[]>([]);
-  const { user, isPatientOfCurrentNutritionist } = useAuth();
-  const { toast } = useToast();
-
+  
+  // Cálculo de IMC
+  const [imc, setImc] = useState<number | null>(null);
+  const [imcClass, setImcClass] = useState("");
+  
+  // Cálculo de Metabolismo Basal
+  const [bmr, setBmr] = useState<number | null>(null);
+  const [tdee, setTdee] = useState<number | null>(null);
+  
   // Carrega os pacientes disponíveis para o nutricionista
   useEffect(() => {
     if (user?.role === "nutritionist" && user.associatedPatients) {
@@ -43,40 +50,27 @@ export const NutriCalculator = () => {
         isPatientOfCurrentNutritionist(patient.id)
       );
       setAvailablePatients(filteredPatients);
-    } else if (user?.role === "patient" && user.patientId) {
-      // Se for um paciente, só mostra os próprios dados
-      const patientData = mockPatients.find(p => p.id === user.patientId);
-      if (patientData) {
-        setAvailablePatients([patientData]);
-        setSelectedPatientId(patientData.id);
-      }
     }
   }, [user, isPatientOfCurrentNutritionist]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handlePatientSelect = (patientId: string) => {
-    setSelectedPatientId(patientId);
-    
-    // Encontra o paciente selecionado
-    const selectedPatient = availablePatients.find(p => p.id === patientId);
-    
+  
+  // Função para carregar dados do paciente selecionado
+  const loadPatientData = (patientId: string) => {
+    const selectedPatient = mockPatients.find(p => p.id === patientId);
     if (selectedPatient) {
-      // Preenche o formulário com os dados do paciente
-      setFormData({
-        weight: selectedPatient.weight.toString(),
-        height: selectedPatient.height.toString(),
-        age: selectedPatient.age.toString(),
-        gender: selectedPatient.gender,
-        activityLevel: formData.activityLevel, // Mantém o nível de atividade atual
-      });
+      setAge(selectedPatient.age.toString());
+      setGender(selectedPatient.gender);
+      setWeight(selectedPatient.weight.toString());
+      setHeight(selectedPatient.height.toString());
+      setFromPatient(true);
+      
+      // Calcular automaticamente com os dados carregados
+      calculateIMC(selectedPatient.weight, selectedPatient.height);
+      calculateBMR(
+        selectedPatient.weight, 
+        selectedPatient.height, 
+        selectedPatient.age, 
+        selectedPatient.gender
+      );
       
       toast({
         title: "Dados carregados",
@@ -84,287 +78,316 @@ export const NutriCalculator = () => {
       });
     }
   };
-
-  const activityMultipliers = {
-    sedentary: 1.2,
-    light: 1.375,
-    moderate: 1.55,
-    active: 1.725,
-    veryActive: 1.9,
+  
+  // Função para recalcular quando o paciente muda
+  const handlePatientChange = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    if (patientId) {
+      loadPatientData(patientId);
+    } else {
+      // Limpar campos se "Selecione um paciente" for escolhido
+      setAge("");
+      setGender("female");
+      setWeight("");
+      setHeight("");
+      setFromPatient(false);
+      setImc(null);
+      setBmr(null);
+      setTdee(null);
+    }
   };
+  
+  // Função para calcular IMC
+  const calculateIMC = (w: number, h: number) => {
+    if (w > 0 && h > 0) {
+      const heightInM = h / 100;
+      const imcValue = w / (heightInM * heightInM);
+      setImc(parseFloat(imcValue.toFixed(2)));
 
-  const activityLabels = {
-    sedentary: "Sedentário (pouco ou nenhum exercício)",
-    light: "Levemente ativo (exercício leve 1-3 dias/semana)",
-    moderate: "Moderadamente ativo (exercício moderado 3-5 dias/semana)",
-    active: "Muito ativo (exercício intenso 6-7 dias/semana)",
-    veryActive: "Extremamente ativo (exercício intenso diário ou trabalho físico)",
+      // Classificação do IMC
+      if (imcValue < 18.5) {
+        setImcClass("Abaixo do peso");
+      } else if (imcValue < 25) {
+        setImcClass("Peso normal");
+      } else if (imcValue < 30) {
+        setImcClass("Sobrepeso");
+      } else if (imcValue < 35) {
+        setImcClass("Obesidade Grau I");
+      } else if (imcValue < 40) {
+        setImcClass("Obesidade Grau II");
+      } else {
+        setImcClass("Obesidade Grau III");
+      }
+    }
   };
-
-  const calculateResults = () => {
-    const weight = parseFloat(formData.weight);
-    const height = parseFloat(formData.height);
-    const age = parseFloat(formData.age);
-
-    if (!weight || !height || !age) {
+  
+  // Função para calcular BMR (Taxa Metabólica Basal)
+  const calculateBMR = (w: number, h: number, a: number, g: string) => {
+    if (w > 0 && h > 0 && a > 0) {
+      let bmrValue = 0;
+      
+      // Fórmula de Mifflin-St Jeor
+      if (g === "male") {
+        bmrValue = 10 * w + 6.25 * h - 5 * a + 5;
+      } else {
+        bmrValue = 10 * w + 6.25 * h - 5 * a - 161;
+      }
+      
+      setBmr(Math.round(bmrValue));
+      
+      // TDEE (Gasto Energético Total Diário)
+      let activityMultiplier = 1.2; // Sedentário
+      
+      switch (activityLevel) {
+        case "light":
+          activityMultiplier = 1.375; // Atividade leve
+          break;
+        case "moderate":
+          activityMultiplier = 1.55; // Atividade moderada
+          break;
+        case "active":
+          activityMultiplier = 1.725; // Atividade intensa
+          break;
+        case "veryActive":
+          activityMultiplier = 1.9; // Atividade muito intensa
+          break;
+      }
+      
+      setTdee(Math.round(bmrValue * activityMultiplier));
+    }
+  };
+  
+  const handleIMCCalculate = () => {
+    const w = parseFloat(weight);
+    const h = parseFloat(height);
+    
+    if (isNaN(w) || isNaN(h)) {
+      toast({
+        title: "Dados incompletos",
+        description: "Por favor, insira peso e altura válidos.",
+        variant: "destructive"
+      });
       return;
     }
-
-    // Calcular IMC
-    const bmi = weight / Math.pow(height / 100, 2);
-
-    // Calcular TMB (Mifflin-St Jeor)
-    let bmr;
-    if (formData.gender === "male") {
-      bmr = 10 * weight + 6.25 * height - 5 * age + 5;
-    } else {
-      bmr = 10 * weight + 6.25 * height - 5 * age - 161;
-    }
-
-    // Calcular TDEE
-    const activity = formData.activityLevel as keyof typeof activityMultipliers;
-    const tdee = bmr * activityMultipliers[activity];
-
-    // Calcular macronutrientes (exemplo para manutenção)
-    // Proteína: 2g por kg de peso corporal
-    // Gordura: 25% das calorias
-    // Carboidratos: restante das calorias
-    const proteins = weight * 2;
-    const fats = (tdee * 0.25) / 9;
-    const carbs = (tdee - (proteins * 4) - (fats * 9)) / 4;
-
-    setResults({
-      bmi: parseFloat(bmi.toFixed(1)),
-      bmr: Math.round(bmr),
-      tdee: Math.round(tdee),
-      macros: {
-        carbs: Math.round(carbs),
-        proteins: Math.round(proteins),
-        fats: Math.round(fats),
-      },
-    });
+    
+    calculateIMC(w, h);
   };
-
+  
+  const handleBMRCalculate = () => {
+    const w = parseFloat(weight);
+    const h = parseFloat(height);
+    const a = parseInt(age);
+    
+    if (isNaN(w) || isNaN(h) || isNaN(a)) {
+      toast({
+        title: "Dados incompletos",
+        description: "Por favor, insira todos os dados necessários.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    calculateBMR(w, h, a, gender);
+  };
+  
+  const handleTabChange = (tab: string) => {
+    setSelectedTab(tab);
+  };
+  
+  // Determina o texto informativo com base no papel do usuário
+  const getInstructionText = () => {
+    if (user?.role === "nutritionist") {
+      return fromPatient 
+        ? "Usando dados do paciente selecionado. Você pode alterar os valores para calcular cenários diferentes."
+        : "Selecione um paciente para carregar seus dados ou insira os valores manualmente.";
+    } else {
+      return "Insira seus dados para calcular seus índices nutricionais.";
+    }
+  };
+  
   return (
-    <Card className="w-full">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle className="text-xl font-semibold">Calculadora Nutricional</CardTitle>
+        <CardTitle className="text-xl font-display">Calculadora Nutricional</CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="metrics">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="metrics">Métricas Corporais</TabsTrigger>
-            <TabsTrigger value="macros">Macronutrientes</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="metrics" className="space-y-4">
-            {availablePatients.length > 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="patientSelect">Selecionar Paciente</Label>
-                <Select
-                  value={selectedPatientId}
-                  onValueChange={handlePatientSelect}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione um paciente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availablePatients.map(patient => (
-                      <SelectItem key={patient.id} value={patient.id}>
-                        {patient.name} ({patient.age} anos)
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="">Entrada manual</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="weight">Peso (kg)</Label>
-                <Input
-                  id="weight"
-                  name="weight"
-                  type="number"
-                  placeholder="Ex: 70"
-                  value={formData.weight}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="height">Altura (cm)</Label>
-                <Input
-                  id="height"
-                  name="height"
-                  type="number"
-                  placeholder="Ex: 170"
-                  value={formData.height}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="age">Idade</Label>
-                <Input
-                  id="age"
-                  name="age"
-                  type="number"
-                  placeholder="Ex: 30"
-                  value={formData.age}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="gender">Sexo</Label>
-                <Select
-                  value={formData.gender}
-                  onValueChange={(value) => handleSelectChange("gender", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o sexo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Masculino</SelectItem>
-                    <SelectItem value="female">Feminino</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="activityLevel">Nível de Atividade</Label>
-                <Select
-                  value={formData.activityLevel}
-                  onValueChange={(value) => handleSelectChange("activityLevel", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o nível de atividade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(activityLabels).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="space-y-6">
+          {/* Campo para seleção de paciente (apenas para nutricionista) */}
+          {user?.role === "nutritionist" && (
+            <div className="space-y-2">
+              <Label htmlFor="patient">Selecionar Paciente</Label>
+              <Select
+                value={selectedPatientId}
+                onValueChange={handlePatientChange}
+              >
+                <SelectTrigger id="patient">
+                  <SelectValue placeholder="Selecione um paciente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Inserir dados manualmente</SelectItem>
+                  {availablePatients.map((patient) => (
+                    <SelectItem key={patient.id} value={patient.id}>
+                      {patient.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground mt-1">{getInstructionText()}</p>
             </div>
-            <Button 
-              className="w-full bg-nutri-primary hover:bg-nutri-secondary mt-4" 
-              onClick={calculateResults}
-            >
-              Calcular
-            </Button>
-            
-            {results.bmi && (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <h3 className="text-sm font-medium text-gray-500">IMC</h3>
-                    <p className="text-2xl font-bold">{results.bmi}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {results.bmi < 18.5
-                        ? "Abaixo do peso"
-                        : results.bmi < 25
-                        ? "Peso normal"
-                        : results.bmi < 30
-                        ? "Sobrepeso"
-                        : "Obesidade"}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <h3 className="text-sm font-medium text-gray-500">TMB</h3>
-                    <p className="text-2xl font-bold">{results.bmr} kcal</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Taxa Metabólica Basal
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <h3 className="text-sm font-medium text-gray-500">TDEE</h3>
-                    <p className="text-2xl font-bold">{results.tdee} kcal</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Gasto Energético Total Diário
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </TabsContent>
+          )}
           
-          <TabsContent value="macros">
-            {results.macros.carbs ? (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Distribuição de Macronutrientes</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card className="bg-blue-50 border-blue-200">
-                      <CardContent className="p-4">
-                        <h4 className="text-blue-800 font-medium">Carboidratos</h4>
-                        <p className="text-2xl font-bold">{results.macros.carbs}g</p>
-                        <p className="text-sm text-gray-600">
-                          {Math.round(results.macros.carbs * 4)} kcal
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {Math.round((results.macros.carbs * 4 * 100) / results.tdee!)}% do total
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-red-50 border-red-200">
-                      <CardContent className="p-4">
-                        <h4 className="text-red-800 font-medium">Proteínas</h4>
-                        <p className="text-2xl font-bold">{results.macros.proteins}g</p>
-                        <p className="text-sm text-gray-600">
-                          {Math.round(results.macros.proteins * 4)} kcal
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {Math.round((results.macros.proteins * 4 * 100) / results.tdee!)}% do total
-                        </p>
-                      </CardContent>
-                    </Card>
-                    <Card className="bg-yellow-50 border-yellow-200">
-                      <CardContent className="p-4">
-                        <h4 className="text-yellow-800 font-medium">Gorduras</h4>
-                        <p className="text-2xl font-bold">{results.macros.fats}g</p>
-                        <p className="text-sm text-gray-600">
-                          {Math.round(results.macros.fats * 9)} kcal
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {Math.round((results.macros.fats * 9 * 100) / results.tdee!)}% do total
-                        </p>
-                      </CardContent>
-                    </Card>
+          {/* Tabs para diferentes calculadoras */}
+          <Tabs 
+            defaultValue="imc" 
+            value={selectedTab} 
+            onValueChange={handleTabChange} 
+            className="w-full"
+          >
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="imc">Cálculo de IMC</TabsTrigger>
+              <TabsTrigger value="metabolism">Metabolismo Basal</TabsTrigger>
+            </TabsList>
+            
+            {/* Calculadora de IMC */}
+            <TabsContent value="imc" className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="weight">Peso (kg)</Label>
+                  <Input
+                    id="weight"
+                    type="number"
+                    placeholder="0.0"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="height">Altura (cm)</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    placeholder="0"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                className="w-full" 
+                onClick={handleIMCCalculate}
+              >
+                Calcular IMC
+              </Button>
+              
+              {imc !== null && (
+                <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-4 mt-4">
+                  <h3 className="font-medium mb-2">Resultado</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">IMC</p>
+                      <p className="text-2xl font-bold text-nutri-primary">{imc}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Classificação</p>
+                      <p className="text-lg font-medium">{imcClass}</p>
+                    </div>
                   </div>
                 </div>
-                <Card>
-                  <CardContent className="p-4">
-                    <h3 className="font-medium mb-2">Objetivos Calóricos Estimados</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Emagrecimento (déficit de 20%):</span>
-                        <span className="font-medium">{Math.round(results.tdee! * 0.8)} kcal</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Manutenção:</span>
-                        <span className="font-medium">{results.tdee} kcal</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Ganho de massa (superávit de 10%):</span>
-                        <span className="font-medium">{Math.round(results.tdee! * 1.1)} kcal</span>
-                      </div>
+              )}
+            </TabsContent>
+            
+            {/* Calculadora de Metabolismo Basal */}
+            <TabsContent value="metabolism" className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="age">Idade</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    placeholder="0"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Sexo</Label>
+                  <Select value={gender} onValueChange={setGender}>
+                    <SelectTrigger id="gender">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Masculino</SelectItem>
+                      <SelectItem value="female">Feminino</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weight-bmr">Peso (kg)</Label>
+                  <Input
+                    id="weight-bmr"
+                    type="number"
+                    placeholder="0.0"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="height-bmr">Altura (cm)</Label>
+                  <Input
+                    id="height-bmr"
+                    type="number"
+                    placeholder="0"
+                    value={height}
+                    onChange={(e) => setHeight(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="activity">Nível de Atividade</Label>
+                  <Select value={activityLevel} onValueChange={setActivityLevel}>
+                    <SelectTrigger id="activity">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sedentary">Sedentário (pouco ou nenhum exercício)</SelectItem>
+                      <SelectItem value="light">Leve (exercício 1-3x/semana)</SelectItem>
+                      <SelectItem value="moderate">Moderado (exercício 3-5x/semana)</SelectItem>
+                      <SelectItem value="active">Ativo (exercício 6-7x/semana)</SelectItem>
+                      <SelectItem value="veryActive">Muito ativo (exercício intenso diário)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <Button 
+                className="w-full" 
+                onClick={handleBMRCalculate}
+              >
+                Calcular Metabolismo
+              </Button>
+              
+              {bmr !== null && (
+                <div className="rounded-lg bg-slate-50 dark:bg-slate-900 p-4 mt-4">
+                  <h3 className="font-medium mb-2">Resultado</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Taxa Metabólica Basal (TMB)</p>
+                      <p className="text-2xl font-bold text-nutri-primary">{bmr} kcal/dia</p>
+                      <p className="text-xs text-muted-foreground mt-1">Calorias necessárias em repouso</p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <div className="p-8 text-center">
-                <p className="text-gray-500">Preencha os dados na aba "Métricas Corporais" e clique em calcular.</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+                    {tdee !== null && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Gasto Energético Total (GET)</p>
+                        <p className="text-2xl font-bold text-nutri-secondary">{tdee} kcal/dia</p>
+                        <p className="text-xs text-muted-foreground mt-1">Calorias totais para manter o peso</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
       </CardContent>
     </Card>
   );
