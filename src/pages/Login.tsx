@@ -116,6 +116,11 @@ const Login = () => {
                 </div>
               </div>
             </div>
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-500">
+                Utilize o botão Supabase no menu superior para conectar a um projeto Supabase
+              </p>
+            </div>
           </CardFooter>
         </Card>
       </div>
