@@ -14,7 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, AlertTriangleIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const signupSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -35,6 +36,8 @@ const Signup = () => {
   const navigate = useNavigate();
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [dbError, setDbError] = useState<boolean>(false);
+  const [showAuthErrorDialog, setShowAuthErrorDialog] = useState<boolean>(false);
+  const [authErrorMessage, setAuthErrorMessage] = useState<string>("");
   
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -68,14 +71,14 @@ const Signup = () => {
     setIsLoading(true);
     setErrorDetails(null);
     setDbError(false);
+    setShowAuthErrorDialog(false);
 
     try {
       const { email, password, name, role } = data;
       
       console.log("Tentando criar usuário com:", { email, name, role });
       
-      // Tenta criar o usuário sem verificar se o email já existe
-      // O Supabase irá retornar um erro apropriado se o email já estiver em uso
+      // Try to create the user with minimal options first
       const { data: authData, error } = await supabase.auth.signUp({
         email,
         password,
@@ -96,6 +99,8 @@ const Signup = () => {
           toast.error("Este e-mail já está registrado. Tente fazer login.");
         } else if (error.status === 500) {
           setDbError(true);
+          setAuthErrorMessage("Erro interno no servidor de autenticação. Isso pode ser causado por um problema na configuração do banco de dados.");
+          setShowAuthErrorDialog(true);
           toast.error("Erro no servidor. Entre em contato com o suporte técnico.");
         } else {
           toast.error(`Falha no registro: ${error.message || "Erro desconhecido"}`);
@@ -133,146 +138,178 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-900">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-nutri-secondary">NutriVita<span className="text-nutri-primary">Plan</span></h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">Crie sua conta para acessar a plataforma</p>
-        </div>
+    <>
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-900">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-nutri-secondary">NutriVita<span className="text-nutri-primary">Plan</span></h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Crie sua conta para acessar a plataforma</p>
+          </div>
 
-        {dbError && (
-          <Alert variant="destructive" className="mb-4">
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>Problema no banco de dados</AlertTitle>
-            <AlertDescription>
-              Detectamos um problema de configuração no banco de dados. 
-              Por favor, entre em contato com o suporte técnico e informe o erro abaixo.
-            </AlertDescription>
-          </Alert>
-        )}
+          {dbError && (
+            <Alert variant="destructive" className="mb-4">
+              <InfoIcon className="h-4 w-4" />
+              <AlertTitle>Problema no banco de dados</AlertTitle>
+              <AlertDescription>
+                Detectamos um problema de configuração no banco de dados. 
+                Por favor, entre em contato com o suporte técnico e informe o erro abaixo.
+              </AlertDescription>
+            </Alert>
+          )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Cadastre-se</CardTitle>
-            <CardDescription>
-              Preencha os dados abaixo para criar sua conta
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome completo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Seu nome completo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="seu.email@exemplo.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Mínimo de 6 caracteres
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Confirme sua senha</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de conta</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Cadastre-se</CardTitle>
+              <CardDescription>
+                Preencha os dados abaixo para criar sua conta
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome completo</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo de conta" />
-                          </SelectTrigger>
+                          <Input placeholder="Seu nome completo" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="patient">Paciente</SelectItem>
-                          <SelectItem value="nutritionist">Nutricionista</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Escolha o tipo de conta que deseja criar
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="seu.email@exemplo.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Senha</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="******" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Mínimo de 6 caracteres
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirme sua senha</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="******" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tipo de conta</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo de conta" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="patient">Paciente</SelectItem>
+                            <SelectItem value="nutritionist">Nutricionista</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Escolha o tipo de conta que deseja criar
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-nutri-primary hover:bg-nutri-secondary" 
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Cadastrando..." : "Cadastrar"}
-                </Button>
-              </form>
-            </Form>
-            
-            {errorDetails && (
-              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-xs overflow-auto max-h-40">
-                <p className="font-semibold text-red-600 dark:text-red-400 mb-1">Detalhes do erro (para suporte técnico):</p>
-                <pre className="whitespace-pre-wrap break-words text-red-600 dark:text-red-400">{errorDetails}</pre>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Já tem uma conta?{" "}
-              <Link to="/login" className="font-medium text-nutri-primary hover:underline">
-                Faça login
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-nutri-primary hover:bg-nutri-secondary" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Cadastrando..." : "Cadastrar"}
+                  </Button>
+                </form>
+              </Form>
+              
+              {errorDetails && (
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-xs overflow-auto max-h-40">
+                  <p className="font-semibold text-red-600 dark:text-red-400 mb-1">Detalhes do erro (para suporte técnico):</p>
+                  <pre className="whitespace-pre-wrap break-words text-red-600 dark:text-red-400">{errorDetails}</pre>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Já tem uma conta?{" "}
+                <Link to="/login" className="font-medium text-nutri-primary hover:underline">
+                  Faça login
+                </Link>
+              </p>
+            </CardFooter>
+          </Card>
+        </div>
       </div>
-    </div>
+
+      <Dialog open={showAuthErrorDialog} onOpenChange={setShowAuthErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangleIcon className="h-5 w-5 text-destructive" />
+              Erro de Autenticação
+            </DialogTitle>
+            <DialogDescription>
+              {authErrorMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-muted/50 p-3 rounded-md text-sm">
+            <p className="font-medium">Possíveis causas:</p>
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>O tipo <code>user_role</code> não existe no banco de dados</li>
+              <li>O trigger <code>handle_new_user</code> está com erro</li>
+              <li>Há um problema de permissão no banco de dados</li>
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAuthErrorDialog(false)}>
+              Fechar
+            </Button>
+            <Button onClick={() => navigate("/login")}>
+              Ir para o Login
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
