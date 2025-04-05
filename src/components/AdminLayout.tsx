@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Users, UserPlus, LogOut, Settings, Bell } from "lucide-react";
+import { Users, UserPlus, LogOut, Settings, Bell, Ticket } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,6 +34,11 @@ const adminMenuItems = [
     title: "Pacientes",
     icon: Users,
     path: "/admin/patients",
+  },
+  {
+    title: "Convites",
+    icon: Ticket,
+    path: "/admin/invitations",
   },
 ];
 

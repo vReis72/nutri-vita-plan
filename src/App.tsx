@@ -27,6 +27,7 @@ import Documentation from "./pages/Documentation";
 import Nutritionists from "./pages/admin/Nutritionists";
 import AdminPatients from "./pages/admin/Patients";
 import Settings from "./pages/admin/Settings";
+import Invitations from "./pages/admin/Invitations";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ const App = () => {
                   <Route path="/assessments" element={<PlaceholderPage title="Avaliações" />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/settings" element={<PlaceholderPage title="Configurações" />} />
+                  <Route path="/invitations" element={<Invitations />} />
                 </Route>
                 
                 {/* Rotas para pacientes */}
@@ -88,6 +90,7 @@ const App = () => {
                   <Route path="/admin/nutritionists" element={<Nutritionists />} />
                   <Route path="/admin/patients" element={<AdminPatients />} />
                   <Route path="/admin/settings" element={<Settings />} />
+                  <Route path="/admin/invitations" element={<Invitations />} />
                 </Route>
                 
                 {/* Rota inicial - Redirecionamento baseado em autenticação */}

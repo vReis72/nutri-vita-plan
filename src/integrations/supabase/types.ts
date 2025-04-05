@@ -157,6 +157,42 @@ export type Database = {
         }
         Relationships: []
       }
+      invitations: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          expires_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          expires_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          expires_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       meal_foods: {
         Row: {
           created_at: string
@@ -372,6 +408,13 @@ export type Database = {
       }
       is_nutritionist: {
         Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
+      use_invitation: {
+        Args: {
+          invitation_code: string
           user_id: string
         }
         Returns: boolean
