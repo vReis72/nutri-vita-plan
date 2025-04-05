@@ -16,3 +16,57 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: typeof window !== 'undefined' ? localStorage : undefined
   }
 });
+
+// Atualize os tipos para Database para incluir a tabela de convites
+declare module './types' {
+  interface Database {
+    public: {
+      Tables: {
+        invitations: {
+          Row: {
+            id: string;
+            code: string;
+            email?: string;
+            role: "patient" | "nutritionist" | "admin";
+            created_by?: string;
+            created_at: string;
+            expires_at: string;
+            used_at?: string;
+            used_by?: string;
+          };
+          Insert: {
+            id?: string;
+            code: string;
+            email?: string;
+            role?: "patient" | "nutritionist" | "admin";
+            created_by?: string;
+            created_at?: string;
+            expires_at?: string;
+            used_at?: string;
+            used_by?: string;
+          };
+          Update: {
+            id?: string;
+            code?: string;
+            email?: string;
+            role?: "patient" | "nutritionist" | "admin";
+            created_by?: string;
+            created_at?: string;
+            expires_at?: string;
+            used_at?: string;
+            used_by?: string;
+          };
+        };
+      };
+      Functions: {
+        use_invitation: {
+          Args: {
+            invitation_code: string;
+            user_id: string;
+          };
+          Returns: boolean;
+        };
+      };
+    };
+  }
+}

@@ -22,6 +22,18 @@ export interface UserProfile {
   associatedPatients?: string[];
 }
 
+export interface Invitation {
+  id: string;
+  code: string;
+  email?: string;
+  role: UserRole;
+  created_by?: string;
+  created_at: string;
+  expires_at: string;
+  used_at?: string;
+  used_by?: string;
+}
+
 export interface AuthContextType {
   user: UserProfile | null;
   isLoading: boolean;

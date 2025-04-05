@@ -1,83 +1,37 @@
 
-import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
+import React from "react";
+import { useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { UserRole } from "@/contexts/auth/types";
+import { InvitationAlert } from "./InvitationAlert";
+import { useInvitation } from "@/hooks/useInvitation";
+import { useSignup } from "@/hooks/useSignup";
 
 const signupSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string().min(6, "Confirme sua senha"),
-  role: z.enum(["patient", "nutritionist"]),
+  role: z.enum(["patient", "nutritionist", "admin"] as const),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não coincidem",
   path: ["confirmPassword"],
 });
 
-type SignupFormData = z.infer<typeof signupSchema>;
+export type SignupFormData = z.infer<typeof signupSchema>;
 
 export const SignupForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [signupError, setSignupError] = useState<string | null>(null);
-  const [invitationCode, setInvitationCode] = useState<string | null>(null);
-  const [invitation, setInvitation] = useState<any | null>(null);
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
-  // Verificar se há um código de convite na URL
-  useEffect(() => {
-    const code = searchParams.get("code");
-    if (code) {
-      setInvitationCode(code);
-      verifyInvitationCode(code);
-    }
-  }, [searchParams]);
-
-  // Verificar a validade do código de convite
-  const verifyInvitationCode = async (code: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('invitations')
-        .select('*')
-        .eq('code', code)
-        .is('used_at', null)
-        .gt('expires_at', new Date().toISOString())
-        .single();
-
-      if (error) {
-        console.error("Erro ao verificar convite:", error);
-        toast.error("Código de convite inválido ou expirado");
-        return;
-      }
-
-      if (data) {
-        setInvitation(data);
-        toast.success("Convite válido!");
-        
-        // Pré-preencher o email se estiver definido no convite
-        if (data.email) {
-          form.setValue('email', data.email);
-        }
-        
-        // Definir a função com base no convite
-        if (data.role) {
-          form.setValue('role', data.role);
-        }
-      }
-    } catch (error) {
-      console.error("Erro ao verificar convite:", error);
-    }
-  };
+  const { invitation, invitationCode } = useInvitation(searchParams);
+  const { isLoading, signupError, handleSignup } = useSignup();
   
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -86,94 +40,33 @@ export const SignupForm = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      role: "patient",
+      role: "patient" as UserRole,
     },
   });
 
-  const handleSignup = async (data: SignupFormData) => {
-    setIsLoading(true);
-    setSignupError(null);
-
-    try {
-      const { email, password, name, role } = data;
-      
-      console.log("Tentando criar usuário com:", { email, name, role });
-      
-      const { data: authData, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role,
-          },
-        }
-      });
-
-      if (error) {
-        console.error("Erro de autenticação:", error);
-        
-        if (error.message?.includes("already registered")) {
-          setSignupError("Este e-mail já está registrado. Tente fazer login.");
-          toast.error("Este e-mail já está registrado. Tente fazer login.");
-        } else {
-          setSignupError(`Falha no registro: ${error.message || "Erro desconhecido"}`);
-          toast.error(`Falha no registro: ${error.message || "Erro desconhecido"}`);
-        }
-        throw error;
-      }
-
-      if (authData && authData.user) {
-        console.log("Usuário criado com sucesso:", authData.user.id);
-        
-        // Se há um código de convite, marcar como utilizado
-        if (invitationCode) {
-          try {
-            const { data: invUseData, error: invError } = await supabase.rpc(
-              'use_invitation', 
-              { invitation_code: invitationCode, user_id: authData.user.id }
-            );
-            
-            if (invError) {
-              console.error("Erro ao usar convite:", invError);
-            } else {
-              console.log("Convite utilizado com sucesso:", invUseData);
-            }
-          } catch (err) {
-            console.error("Erro ao processar convite:", err);
-          }
-        }
-        
-        toast.success("Registro realizado com sucesso!");
-        
-        // Aguardar um momento para garantir que o trigger handle_new_user seja executado
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
-      } else {
-        console.error("Dados de autenticação incompletos");
-        setSignupError("Falha no registro: dados de autenticação incompletos");
-        toast.error("Falha no registro: dados de autenticação incompletos");
+  // Preencher o formulário com dados do convite, se disponíveis
+  React.useEffect(() => {
+    if (invitation) {
+      // Preencher o email se estiver definido no convite
+      if (invitation.email) {
+        form.setValue('email', invitation.email);
       }
       
-    } catch (error: any) {
-      console.error("Erro detalhado ao registrar:", error);
-    } finally {
-      setIsLoading(false);
+      // Definir a função com base no convite
+      if (invitation.role) {
+        form.setValue('role', invitation.role as UserRole);
+      }
     }
+  }, [invitation, form]);
+
+  const onSubmit = (data: SignupFormData) => {
+    handleSignup(data, invitationCode);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSignup)} className="space-y-4">
-        {invitationCode && invitation && (
-          <Alert className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800">
-            <AlertTitle className="text-green-800 dark:text-green-400">Convite válido</AlertTitle>
-            <AlertDescription className="text-green-700 dark:text-green-500">
-              Você está se registrando usando um convite {invitation.role === 'patient' ? 'de paciente' : 'de nutricionista'}.
-            </AlertDescription>
-          </Alert>
-        )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <InvitationAlert invitation={invitation} />
         
         <FormField
           control={form.control}
@@ -199,7 +92,7 @@ export const SignupForm = () => {
                 <Input 
                   type="email" 
                   placeholder="seu.email@exemplo.com" 
-                  disabled={invitation?.email !== null && invitation?.email !== undefined}
+                  disabled={invitation?.email !== undefined}
                   {...field} 
                 />
               </FormControl>
@@ -248,7 +141,7 @@ export const SignupForm = () => {
               <Select 
                 onValueChange={field.onChange} 
                 defaultValue={field.value}
-                disabled={invitation?.role !== null && invitation?.role !== undefined}
+                disabled={invitation?.role !== undefined}
               >
                 <FormControl>
                   <SelectTrigger>
