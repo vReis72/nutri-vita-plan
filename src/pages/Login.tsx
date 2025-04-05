@@ -8,12 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginResponse, setLoginResponse] = useState<any>(null);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   const { user, isNutritionist, isPatient, isAdmin } = useAuth();
   const navigate = useNavigate();
 
@@ -37,9 +41,10 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setLoginError(null);
+    setLoginResponse(null);
 
     try {
-      console.log(`Attempting login with email: ${email}`);
+      console.log(`Tentando login com email: ${email}`);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -47,20 +52,42 @@ const Login = () => {
       });
 
       if (error) {
-        console.error("Login error:", error);
+        console.error("Erro no login:", error);
         setLoginError(error.message);
+        setLoginResponse({ error });
+        toast.error(`Falha no login: ${error.message || 'Verifique suas credenciais.'}`);
         throw error;
       }
 
-      console.log("Login successful:", data);
+      console.log("Login bem-sucedido:", data);
+      setLoginResponse({ data });
+      
+      // Verificar se o perfil do usuário existe
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user?.id)
+        .single();
+      
+      if (profileError) {
+        console.warn("Perfil não encontrado ou incompleto:", profileError);
+        // Continuamos mesmo sem perfil, o AuthContext tentará lidar com isso
+      } else {
+        console.log("Perfil encontrado:", profileData);
+      }
+      
       toast.success("Login realizado com sucesso!");
       redirectBasedOnRole();
     } catch (error: any) {
-      toast.error(`Falha no login: ${error.message || 'Verifique suas credenciais.'}`);
-      console.error(error);
+      console.error("Erro detalhado:", error);
+      // Não exibimos toast aqui porque já fizemos isso acima
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const toggleDebugInfo = () => {
+    setShowDebugInfo(!showDebugInfo);
   };
 
   return (
@@ -103,9 +130,13 @@ const Login = () => {
               </div>
               
               {loginError && (
-                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-md text-red-600 dark:text-red-400 text-sm">
-                  {loginError}
-                </div>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Erro de autenticação</AlertTitle>
+                  <AlertDescription>
+                    {loginError}
+                  </AlertDescription>
+                </Alert>
               )}
               
               <Button 
@@ -116,14 +147,35 @@ const Login = () => {
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
+            
+            {showDebugInfo && loginResponse && (
+              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto max-h-40">
+                <p className="font-semibold mb-1">Informações de depuração:</p>
+                <pre className="whitespace-pre-wrap break-words">
+                  {JSON.stringify(loginResponse, null, 2)}
+                </pre>
+              </div>
+            )}
+            
+            <div className="mt-4 text-right">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={toggleDebugInfo}
+                className="text-xs text-gray-500"
+              >
+                {showDebugInfo ? "Ocultar" : "Depurar"}
+              </Button>
+            </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-2 text-sm">
             <div className="text-gray-500 dark:text-gray-400 text-center">
-              <p className="font-medium mb-2">Para testar, crie uma conta na página de cadastro</p>
+              <p className="font-medium mb-2">É necessário criar uma conta no SupaBase</p>
               <div className="grid grid-cols-1 gap-3 text-left">
                 <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
                   <p className="font-semibold mb-1">Importante:</p>
-                  <p>As credenciais de teste anteriores não estão registradas no Supabase.</p>
+                  <p>É necessário criar uma conta no registro para usar o sistema.</p>
+                  <p>As credenciais de teste anteriores não funcionarão.</p>
                   <p>Para usar o sistema, crie uma conta na página de cadastro.</p>
                 </div>
               </div>
