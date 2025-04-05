@@ -380,7 +380,7 @@ export type Database = {
     Enums: {
       gender_type: "male" | "female"
       patient_goal: "weightLoss" | "weightGain" | "maintenance"
-      user_role: "nutritionist" | "patient" | "admin"
+      user_role: "patient" | "nutritionist" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never

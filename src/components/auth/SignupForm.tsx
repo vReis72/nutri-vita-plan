@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const signupSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -26,6 +28,7 @@ type SignupFormData = z.infer<typeof signupSchema>;
 
 export const SignupForm = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
   const navigate = useNavigate();
   
   const form = useForm<SignupFormData>({
@@ -41,6 +44,7 @@ export const SignupForm = () => {
 
   const handleSignup = async (data: SignupFormData) => {
     setIsLoading(true);
+    setSignupError(null);
 
     try {
       const { email, password, name, role } = data;
@@ -55,7 +59,6 @@ export const SignupForm = () => {
             name,
             role,
           },
-          emailRedirectTo: window.location.origin + "/login",
         }
       });
 
@@ -63,8 +66,10 @@ export const SignupForm = () => {
         console.error("Erro de autenticação:", error);
         
         if (error.message?.includes("already registered")) {
+          setSignupError("Este e-mail já está registrado. Tente fazer login.");
           toast.error("Este e-mail já está registrado. Tente fazer login.");
         } else {
+          setSignupError(`Falha no registro: ${error.message || "Erro desconhecido"}`);
           toast.error(`Falha no registro: ${error.message || "Erro desconhecido"}`);
         }
         throw error;
@@ -72,7 +77,7 @@ export const SignupForm = () => {
 
       if (authData && authData.user) {
         console.log("Usuário criado com sucesso:", authData.user.id);
-        toast.success("Registro realizado com sucesso! Verifique seu email para confirmar sua conta.");
+        toast.success("Registro realizado com sucesso!");
         
         // Aguardar um momento para garantir que o trigger handle_new_user seja executado
         setTimeout(() => {
@@ -80,6 +85,7 @@ export const SignupForm = () => {
         }, 1500);
       } else {
         console.error("Dados de autenticação incompletos");
+        setSignupError("Falha no registro: dados de autenticação incompletos");
         toast.error("Falha no registro: dados de autenticação incompletos");
       }
       
@@ -176,6 +182,16 @@ export const SignupForm = () => {
             </FormItem>
           )}
         />
+
+        {signupError && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro no registro</AlertTitle>
+            <AlertDescription>
+              {signupError}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Button 
           type="submit" 
