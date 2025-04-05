@@ -64,7 +64,6 @@ export const SignupForm = () => {
         
         if (error.message?.includes("already registered")) {
           toast.error("Este e-mail já está registrado. Tente fazer login.");
-          // Aqui passamos a função de mudança de tab para o componente pai
         } else {
           toast.error(`Falha no registro: ${error.message || "Erro desconhecido"}`);
         }
