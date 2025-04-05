@@ -10,7 +10,8 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  User
+  User,
+  BookOpen
 } from "lucide-react";
 
 import {
@@ -144,6 +145,17 @@ const AppSidebar = () => {
             </Link>
           </SidebarMenuButton>
         </div>
+        <div className="px-3 py-2">
+          <SidebarMenuButton asChild tooltip="Documentação">
+            <Link to="/documentation" className={cn(
+              "w-full transition-colors",
+              location.pathname === "/documentation" ? "text-nutri-primary" : ""
+            )}>
+              <BookOpen className="h-4 w-4" />
+              <span>Documentação</span>
+            </Link>
+          </SidebarMenuButton>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
@@ -161,6 +173,13 @@ const AppHeader = () => {
           <h1 className="text-xl font-semibold text-nutri-secondary transition-colors duration-300 dark:text-white">NutriVita Plan</h1>
         </div>
         <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" asChild className="hidden md:flex">
+            <Link to="/documentation">
+              <BookOpen className="mr-2 h-4 w-4" />
+              Documentação
+            </Link>
+          </Button>
+          
           <ThemeToggle />
           
           <Button variant="outline" size="sm" onClick={logout} className="hidden md:flex">

@@ -21,6 +21,7 @@ import Signup from "./pages/Signup";
 import PatientProgress from "./pages/PatientProgress";
 import PatientAssessments from "./pages/PatientAssessments";
 import PatientProfile from "./pages/PatientProfile";
+import Documentation from "./pages/Documentation";
 
 // Admin pages
 import Nutritionists from "./pages/admin/Nutritionists";
@@ -42,6 +43,7 @@ const App = () => {
                 {/* Rotas públicas */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/documentation" element={<Documentation />} />
                 
                 {/* Rotas para nutricionistas */}
                 <Route 
