@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { CardDescription } from "@/components/ui/card";
 import { LoginForm } from "./LoginForm";
 import { TestCredentials } from "./TestCredentials";
+import { AdminLoginButton } from "./AdminLoginButton";
 
 export const LoginTabContent = () => {
   return (
@@ -21,6 +22,10 @@ export const LoginTabContent = () => {
           Registre-se
         </Link>
         {" "}se não tem uma conta
+      </div>
+      
+      <div className="mt-4 border-t pt-4">
+        <AdminLoginButton />
       </div>
       
       <TestCredentials />
