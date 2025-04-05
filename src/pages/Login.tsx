@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const { user, isNutritionist, isPatient, isAdmin } = useAuth();
   const navigate = useNavigate();
 
@@ -34,17 +36,23 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError(null);
 
     try {
+      console.log(`Attempting login with email: ${email}`);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) {
+        console.error("Login error:", error);
+        setLoginError(error.message);
         throw error;
       }
 
+      console.log("Login successful:", data);
       toast.success("Login realizado com sucesso!");
       redirectBasedOnRole();
     } catch (error: any) {
@@ -93,6 +101,13 @@ const Login = () => {
                   required
                 />
               </div>
+              
+              {loginError && (
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-md text-red-600 dark:text-red-400 text-sm">
+                  {loginError}
+                </div>
+              )}
+              
               <Button 
                 type="submit" 
                 className="w-full bg-nutri-primary hover:bg-nutri-secondary" 
@@ -104,22 +119,12 @@ const Login = () => {
           </CardContent>
           <CardFooter className="flex flex-col gap-2 text-sm">
             <div className="text-gray-500 dark:text-gray-400 text-center">
-              <p className="font-medium mb-2">Credenciais de teste:</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-left">
+              <p className="font-medium mb-2">Para testar, crie uma conta na página de cadastro</p>
+              <div className="grid grid-cols-1 gap-3 text-left">
                 <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                  <p className="font-semibold">Nutricionista:</p>
-                  <p>login@nutricionista.com</p>
-                  <p>senha123</p>
-                </div>
-                <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                  <p className="font-semibold">Paciente:</p>
-                  <p>paciente@email.com</p>
-                  <p>senha123</p>
-                </div>
-                <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                  <p className="font-semibold">Administrador:</p>
-                  <p>admin@email.com</p>
-                  <p>admin123</p>
+                  <p className="font-semibold mb-1">Importante:</p>
+                  <p>As credenciais de teste anteriores não estão registradas no Supabase.</p>
+                  <p>Para usar o sistema, crie uma conta na página de cadastro.</p>
                 </div>
               </div>
             </div>

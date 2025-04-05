@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,24 +145,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Monitorar o estado de autenticação do Supabase
   useEffect(() => {
+    console.log("Setting up auth state change listener");
+    
     // Configurar o listener de mudanças de autenticação PRIMEIRO
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.id);
         setSession(currentSession);
         
         if (currentSession && currentSession.user) {
           // Buscar perfil do usuário do Supabase
           try {
             setTimeout(async () => {
+              console.log("Fetching profile for user:", currentSession.user.id);
               const { data: profileData, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', currentSession.user.id)
                 .single();
                 
-              if (error) throw error;
+              if (error) {
+                console.error("Error fetching profile:", error);
+                // If we can't find a profile, check if it's a first login and create a profile
+                if (error.code === 'PGRST116') {
+                  const userData = currentSession.user.user_metadata || {};
+                  console.log("No profile found, using metadata:", userData);
+                  
+                  // Simple user profile from auth metadata
+                  const userProfile: UserProfile = {
+                    id: currentSession.user.id,
+                    name: userData.name || userData.full_name || currentSession.user.email?.split('@')[0] || 'User',
+                    role: 'patient', // Default role
+                  };
+                  setUser(userProfile);
+                  return;
+                }
+                throw error;
+              }
               
               if (profileData) {
+                console.log("Profile found:", profileData);
                 const userProfile: UserProfile = {
                   id: profileData.id,
                   name: profileData.name,
@@ -214,6 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(null);
           }
         } else {
+          console.log("No current session or user, setting user to null");
           setUser(null);
         }
       }
@@ -221,17 +245,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // DEPOIS verificar sessão existente
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Initial session check:", currentSession?.user?.id);
       setSession(currentSession);
       
-      if (currentSession && currentSession.user) {
-        // A busca do perfil vai acontecer via onAuthStateChange
-      } else {
+      // A busca do perfil vai acontecer via onAuthStateChange
+      if (!currentSession) {
         setUser(null);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => {
+      console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
   }, []);
@@ -252,14 +277,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log("Logging in with:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) throw error;
+      console.log("Login successful, user will be set by onAuthStateChange");
       
-      // O usuário será definido pelo onAuthStateChange
       return;
     } catch (error: any) {
       console.error("Erro no login:", error);
@@ -271,8 +297,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      console.log("Logging out");
       await supabase.auth.signOut();
       setUser(null);
+      console.log("Logged out successfully");
     } catch (error) {
       console.error("Erro no logout:", error);
       toast.error("Erro ao fazer logout.");
