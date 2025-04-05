@@ -17,7 +17,6 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [loginResponse, setLoginResponse] = useState<any>(null);
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [tab, setTab] = useState<'login' | 'info'>('login');
   const { user, isNutritionist, isPatient, isAdmin } = useAuth();
@@ -43,7 +42,6 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setLoginError(null);
-    setLoginResponse(null);
 
     try {
       console.log(`Tentando login com email: ${email}`);
@@ -56,13 +54,11 @@ const Login = () => {
       if (error) {
         console.error("Erro no login:", error);
         setLoginError(error.message);
-        setLoginResponse({ error });
         toast.error(`Falha no login: ${error.message || 'Verifique suas credenciais.'}`);
         throw error;
       }
 
       console.log("Login bem-sucedido:", data);
-      setLoginResponse({ data });
       
       // Verificar se o perfil do usuário existe
       const { data: profileData, error: profileError } = await supabase
@@ -73,12 +69,32 @@ const Login = () => {
       
       if (profileError) {
         console.warn("Erro ao buscar perfil:", profileError);
-        setLoginError("Erro ao carregar perfil de usuário. O sistema pode estar com problemas de configuração.");
-        setLoginResponse({ profileError });
+        setLoginError("Erro ao carregar perfil de usuário.");
       } else if (!profileData) {
         console.warn("Perfil não encontrado para o usuário");
-        setLoginError("Perfil de usuário não encontrado. Possível problema com a configuração do banco de dados.");
-        setLoginResponse({ profileError: "Perfil não encontrado" });
+        
+        // Tentar criar um perfil para o usuário
+        try {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([{ 
+              id: data.user?.id,
+              name: data.user?.email || 'Usuário', 
+              role: 'patient'
+            }]);
+            
+          if (insertError) {
+            console.error("Erro ao criar perfil:", insertError);
+            setLoginError("Não foi possível criar um perfil para o usuário.");
+          } else {
+            console.log("Perfil criado com sucesso");
+            toast.success("Login realizado com sucesso!");
+            redirectBasedOnRole();
+          }
+        } catch (createError) {
+          console.error("Erro ao criar perfil:", createError);
+          setLoginError("Erro ao criar perfil de usuário.");
+        }
       } else {
         console.log("Perfil encontrado:", profileData);
         toast.success("Login realizado com sucesso!");
@@ -171,24 +187,27 @@ const Login = () => {
                   </div>
                 </form>
                 
-                {showDebugInfo && loginResponse && (
-                  <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto max-h-40">
-                    <p className="font-semibold mb-1">Informações de depuração:</p>
-                    <pre className="whitespace-pre-wrap break-words">
-                      {JSON.stringify(loginResponse, null, 2)}
-                    </pre>
+                <div className="mt-5 pt-5 border-t">
+                  <div className="text-gray-500 dark:text-gray-400 text-center">
+                    <p className="font-medium mb-2">Credenciais de teste:</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-left">
+                      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                        <p className="font-semibold">Nutricionista:</p>
+                        <p>login@nutricionista.com</p>
+                        <p>senha123</p>
+                      </div>
+                      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                        <p className="font-semibold">Paciente:</p>
+                        <p>paciente@email.com</p>
+                        <p>senha123</p>
+                      </div>
+                      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                        <p className="font-semibold">Administrador:</p>
+                        <p>admin@email.com</p>
+                        <p>admin123</p>
+                      </div>
+                    </div>
                   </div>
-                )}
-                
-                <div className="mt-4 text-right">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={toggleDebugInfo}
-                    className="text-xs text-gray-500"
-                  >
-                    {showDebugInfo ? "Ocultar" : "Depurar"}
-                  </Button>
                 </div>
               </TabsContent>
               
@@ -196,15 +215,19 @@ const Login = () => {
                 <div className="space-y-4">
                   <Alert>
                     <Info className="h-4 w-4" />
-                    <AlertTitle>Estado do sistema</AlertTitle>
+                    <AlertTitle>Sistema atualizado</AlertTitle>
                     <AlertDescription>
-                      Há um problema de configuração no banco de dados do Supabase que impede novos registros.
+                      A configuração do banco de dados foi corrigida e o cadastro de novos usuários deve funcionar normalmente agora.
                     </AlertDescription>
                   </Alert>
                   
                   <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded">
-                    <p className="font-semibold mb-2">Erro técnico:</p>
-                    <p className="text-sm">O tipo <code>user_role</code> não existe ou há um problema com o trigger <code>handle_new_user</code>.</p>
+                    <p className="font-semibold mb-2">Alterações realizadas:</p>
+                    <ul className="list-disc pl-5 space-y-1 text-sm">
+                      <li>Criação do tipo <code>user_role</code> no banco de dados</li>
+                      <li>Correção do trigger <code>handle_new_user</code> no Supabase</li>
+                      <li>Ajustes na interface para melhor experiência do usuário</li>
+                    </ul>
                   </div>
                   
                   <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded">
@@ -226,15 +249,6 @@ const Login = () => {
                         <p>Senha: admin123</p>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-200 dark:border-yellow-800">
-                    <p className="font-semibold text-yellow-800 dark:text-yellow-400 mb-2">Possíveis soluções:</p>
-                    <ul className="list-disc pl-5 space-y-1 text-sm text-yellow-800 dark:text-yellow-400">
-                      <li>Verificar a configuração do Supabase e criar o tipo de enum <code>user_role</code></li>
-                      <li>Corrigir o trigger <code>handle_new_user</code> no SQL do Supabase</li>
-                      <li>Use as credenciais de teste acima para entrar no sistema</li>
-                    </ul>
                   </div>
                 </div>
               </TabsContent>
